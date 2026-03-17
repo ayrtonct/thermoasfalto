@@ -45,16 +45,6 @@
   min-width: 0;
 }
 
-.footer {
-  text-align: center;
-  padding: 1.5rem;
-  font-size: 0.8rem;
-  color: var(--text3);
-  border-top: 1px solid var(--border);
-  font-family: var(--font-mono);
-  background-color: var(--bg2);
-}
-
 /* Breakpoints */
 @media (max-width: 900px) {
   .middleRow {

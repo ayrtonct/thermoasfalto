@@ -1,0 +1,82 @@
+.footer {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background-color: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* 24px vertical padding requested roughly between blocks */
+}
+
+/* Bloco 1 */
+.blockOne {
+  font-family: var(--font-mono);
+  font-size: 0.95rem; /* slightly larger */
+  color: var(--text2);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Bloco 2 */
+.blockTwo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  font-size: 0.8rem;
+}
+
+.labs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.separator {
+  color: var(--border2);
+}
+
+.instituicao {
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+/* Bloco 3 */
+.blockThree {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+  font-family: var(--font-mono);
+  color: var(--text3);
+  font-size: 0.8rem;
+}
+
+.teamMember {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.label {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Mobile Responsiveness (< 600px) */
+@media (max-width: 600px) {
+  .labs {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  
+  .separator {
+    display: none;
+  }
+
+  .blockThree {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

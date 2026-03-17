@@ -9,6 +9,7 @@ import { Gauge } from './components/Gauge/Gauge';
 import { HistoryChart } from './components/HistoryChart/HistoryChart';
 import { GradientProfile } from './components/GradientProfile/GradientProfile';
 import { StatsTable } from './components/StatsTable/StatsTable';
+import { Footer } from './components/Footer/Footer';
 
 import styles from './App.module.css';
 
@@ -89,9 +90,7 @@ function App() {
         </div>
       </main>
       
-      <footer className={styles.footer}>
-        <p>Laboratório de Instrumentação Eletrônica — Engenharia da Computação, CCT / UEMA © 2026</p>
-      </footer>
+      <Footer />
     </div>
   );
 }
