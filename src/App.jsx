@@ -1,0 +1,99 @@
+import { useState } from 'react';
+import { useSensorData } from './hooks/useSensorData';
+import { ALERT_THRESHOLD } from './constants/sensors';
+
+import { Header } from './components/Header/Header';
+import { AlertStrip } from './components/AlertStrip/AlertStrip';
+import { KpiCards } from './components/KpiCards/KpiCards';
+import { Gauge } from './components/Gauge/Gauge';
+import { HistoryChart } from './components/HistoryChart/HistoryChart';
+import { GradientProfile } from './components/GradientProfile/GradientProfile';
+import { StatsTable } from './components/StatsTable/StatsTable';
+
+import styles from './App.module.css';
+
+function App() {
+  const {
+    leituraAtual,
+    historico,
+    periodo,
+    setPeriodo,
+    customRange,
+    setCustomRange,
+    isDemo,
+    isLoading
+  } = useSensorData();
+
+  const [selectedSensorId, setSelectedSensorId] = useState('ds5'); // Default to DS5 (superfície)
+
+  // Check alerts
+  const alerts = [];
+  if (leituraAtual) {
+    if (leituraAtual.temp_ds1 > ALERT_THRESHOLD) alerts.push({ sensor: 'DS1', temp: leituraAtual.temp_ds1 });
+    if (leituraAtual.temp_ds2 > ALERT_THRESHOLD) alerts.push({ sensor: 'DS2', temp: leituraAtual.temp_ds2 });
+    if (leituraAtual.temp_ds3 > ALERT_THRESHOLD) alerts.push({ sensor: 'DS3', temp: leituraAtual.temp_ds3 });
+    if (leituraAtual.temp_ds4 > ALERT_THRESHOLD) alerts.push({ sensor: 'DS4', temp: leituraAtual.temp_ds4 });
+    if (leituraAtual.temp_ds5 > ALERT_THRESHOLD) alerts.push({ sensor: 'DS5', temp: leituraAtual.temp_ds5 });
+    if (leituraAtual.temp_ds6 > ALERT_THRESHOLD) alerts.push({ sensor: 'DS6', temp: leituraAtual.temp_ds6 });
+  }
+
+  const selectedSensorValue = leituraAtual ? leituraAtual[`temp_${selectedSensorId}`] : 0;
+
+  return (
+    <div className={styles.appWrapper}>
+      <Header 
+        isDemo={isDemo} 
+        isOnline={leituraAtual !== null} 
+        lastUpdate={leituraAtual ? leituraAtual.data_hora : null} 
+      />
+      
+      <AlertStrip alerts={alerts} />
+
+      <main className={styles.mainContent}>
+        <KpiCards 
+          leituraAtual={leituraAtual} 
+          historico={historico} 
+        />
+
+        <div className={styles.middleRow}>
+          <div className={styles.gaugeWrapper}>
+            <Gauge 
+              value={selectedSensorValue} 
+              selectedSensorId={selectedSensorId} 
+              onSelectSensor={setSelectedSensorId} 
+            />
+          </div>
+          <div className={styles.chartWrapper}>
+            <HistoryChart 
+              historico={historico}
+              periodo={periodo}
+              setPeriodo={setPeriodo}
+              customRange={customRange}
+              setCustomRange={setCustomRange}
+            />
+          </div>
+        </div>
+
+        <div className={styles.bottomRow}>
+          <div className={styles.bottomCol}>
+            <GradientProfile 
+              leituraAtual={leituraAtual} 
+              historico={historico} 
+            />
+          </div>
+          <div className={styles.bottomCol}>
+            <StatsTable 
+              historico={historico} 
+            />
+          </div>
+        </div>
+      </main>
+      
+      <footer className={styles.footer}>
+        <p>Laboratório de Instrumentação Eletrônica — Engenharia da Computação, CCT / UEMA © 2026</p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;

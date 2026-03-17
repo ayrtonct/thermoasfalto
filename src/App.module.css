@@ -1,0 +1,80 @@
+.appWrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0 0 2rem 0; /* sides have padding inside components or row wrap */
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* KpiCards handles its own wrapper/padding */
+
+.middleRow {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0 2rem;
+  min-height: 400px;
+}
+
+.gaugeWrapper {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.chartWrapper {
+  flex: 1;
+  min-width: 0; /* crucial for flexbox inner chart responsiveness */
+}
+
+.bottomRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  padding: 0 2rem;
+}
+
+.bottomCol {
+  min-width: 0;
+}
+
+.footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  background-color: var(--bg2);
+}
+
+/* Breakpoints */
+@media (max-width: 900px) {
+  .middleRow {
+    flex-direction: column;
+  }
+  .gaugeWrapper {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .chartWrapper {
+    height: 450px;
+  }
+}
+
+@media (max-width: 700px) {
+  .middleRow, .bottomRow {
+    padding: 0 1rem;
+  }
+  .bottomRow {
+    grid-template-columns: 1fr;
+  }
+}

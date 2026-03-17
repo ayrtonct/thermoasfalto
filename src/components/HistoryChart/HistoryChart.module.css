@@ -1,0 +1,171 @@
+.container {
+  background-color: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.periodGroup {
+  display: flex;
+  background-color: var(--bg3);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.periodBtn {
+  background: none;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  color: var(--text2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.periodBtn:last-child {
+  border-right: none;
+}
+
+.periodBtn:hover {
+  background-color: var(--border2);
+  color: var(--text);
+}
+
+.periodBtn.active {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.customRange {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bg3);
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.dateInput {
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color-scheme: dark;
+}
+
+.rangeSep {
+  font-size: 0.75rem;
+  color: var(--text2);
+}
+
+.applyBtn {
+  background-color: var(--blue);
+  color: white;
+  border: none;
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.applyBtn:hover {
+  background-color: #2563eb;
+}
+
+.chartWrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0; 
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+
+.legendItem:hover {
+  opacity: 0.8;
+}
+
+.legendItem.hidden {
+  opacity: 0.5;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.legendLabel {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.legendItem.hidden .legendLabel {
+  color: var(--text2);
+  text-decoration: line-through;
+}
+
+@media (max-width: 700px) {
+  .periodGroup {
+    flex-wrap: wrap;
+  }
+  .controls {
+    align-items: flex-start;
+  }
+  .customRange {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

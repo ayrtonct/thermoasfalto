@@ -1,0 +1,111 @@
+.gaugeContainer {
+  background-color: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 100%;
+}
+
+.gaugeViz {
+  position: relative;
+  width: 100%;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
+.svg {
+  width: 100%;
+  display: block;
+}
+
+.arcActive {
+  transition: stroke 0.8s ease, d 0.8s ease;
+}
+
+.gaugeValueBox {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.gaugeValue {
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.gaugeLabel {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text2);
+}
+
+.gaugeDepth {
+  font-size: 0.8rem;
+  color: var(--text3);
+}
+
+.sensorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.sensorBtn {
+  background-color: var(--bg3);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.sensorBtn:hover {
+  background-color: var(--border);
+}
+
+.sensorBtn.active {
+  background-color: rgba(249, 115, 22, 0.1);
+  /* The border-color is set inline via React style */
+}
+
+.btnDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--s-color);
+  flex-shrink: 0;
+}
+
+.btnMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.btnLabel {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.btnDepth {
+  color: var(--text2);
+  font-size: 0.75rem;
+}
