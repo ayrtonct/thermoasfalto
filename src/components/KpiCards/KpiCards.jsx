@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import styles from './KpiCards.module.css';
+import { safeAvg, isValidReading } from '../../utils/dataHelpers';
 
 const KpiCard = ({ title, value, unit, previousValue }) => {
   const delta = previousValue !== null && value !== null ? value - previousValue : 0;
@@ -38,14 +39,14 @@ export const KpiCards = ({ leituraAtual, historico }) => {
   // If no data yet
   if (!leituraAtual) return <div className={styles.container}>Carregando KPIs...</div>;
 
-  const currentSurf = (leituraAtual.temp_ds5 + leituraAtual.temp_ds6) / 2;
-  const currentMed = (leituraAtual.temp_ds3 + leituraAtual.temp_ds4) / 2;
-  const currentBase = (leituraAtual.temp_ds1 + leituraAtual.temp_ds2) / 2;
-  const gradient = currentSurf - currentBase;
+  const currentSurf = safeAvg(leituraAtual.temp_ds5, leituraAtual.temp_ds6);
+  const currentMed = safeAvg(leituraAtual.temp_ds3, leituraAtual.temp_ds4);
+  const currentBase = safeAvg(leituraAtual.temp_ds1, leituraAtual.temp_ds2);
+  const gradient = currentSurf !== null && currentBase !== null ? currentSurf - currentBase : null;
 
-  const prevSurf = prevLeitura ? (prevLeitura.temp_ds5 + prevLeitura.temp_ds6) / 2 : null;
-  const prevMed = prevLeitura ? (prevLeitura.temp_ds3 + prevLeitura.temp_ds4) / 2 : null;
-  const prevBase = prevLeitura ? (prevLeitura.temp_ds1 + prevLeitura.temp_ds2) / 2 : null;
+  const prevSurf = prevLeitura ? safeAvg(prevLeitura.temp_ds5, prevLeitura.temp_ds6) : null;
+  const prevMed = prevLeitura ? safeAvg(prevLeitura.temp_ds3, prevLeitura.temp_ds4) : null;
+  const prevBase = prevLeitura ? safeAvg(prevLeitura.temp_ds1, prevLeitura.temp_ds2) : null;
   const prevGradient = prevSurf !== null && prevBase !== null ? prevSurf - prevBase : null;
 
   // Calculate global min/max over historico
@@ -55,10 +56,14 @@ export const KpiCards = ({ leituraAtual, historico }) => {
   if (historico && historico.length > 0) {
     let allTemps = [];
     historico.forEach(l => {
-      allTemps.push(l.temp_ds1, l.temp_ds2, l.temp_ds3, l.temp_ds4, l.temp_ds5, l.temp_ds6);
+      [l.temp_ds1, l.temp_ds2, l.temp_ds3, l.temp_ds4, l.temp_ds5, l.temp_ds6].forEach(val => {
+        if (isValidReading(val)) allTemps.push(val);
+      });
     });
-    maxPeriod = Math.max(...allTemps);
-    minPeriod = Math.min(...allTemps);
+    if (allTemps.length > 0) {
+      maxPeriod = Math.max(...allTemps);
+      minPeriod = Math.min(...allTemps);
+    }
   }
 
   return (

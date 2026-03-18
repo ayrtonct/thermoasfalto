@@ -87,3 +87,17 @@
 .low {
   color: var(--blue);
 }
+
+.offlineRow {
+  opacity: 0.5;
+}
+
+.offlineBadge {
+  background-color: var(--bg2);
+  color: var(--text3);
+  font-size: 0.6rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}

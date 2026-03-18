@@ -54,7 +54,8 @@ export const HistoryChart = ({
       return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     });
 
-    const datasets = SENSORS.map(sensor => {
+    const activeSensors = SENSORS.filter(s => s.active);
+    const datasets = activeSensors.map(sensor => {
       const dataKey = `temp_${sensor.id}`;
       return {
         label: sensor.label,
@@ -65,6 +66,7 @@ export const HistoryChart = ({
         pointRadius: 0,
         pointHoverRadius: 4,
         tension: 0.4, // Smooth lines
+        spanGaps: false,
         hidden: hiddenDatasets[sensor.id] || false,
         sensorId: sensor.id, // custom prop
       };
@@ -177,7 +179,7 @@ export const HistoryChart = ({
       </div>
 
       <div className={styles.legend}>
-        {SENSORS.map(s => {
+        {SENSORS.filter(s => s.active).map(s => {
           const isHidden = hiddenDatasets[s.id];
           return (
             <div 

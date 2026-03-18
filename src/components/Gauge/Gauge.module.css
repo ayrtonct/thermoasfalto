@@ -85,6 +85,25 @@
   /* The border-color is set inline via React style */
 }
 
+.sensorBtn.offline {
+  opacity: 0.4;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.offlineBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: var(--bg2);
+  color: var(--red);
+  font-size: 0.55rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 700;
+  border: 1px solid var(--red);
+}
+
 .btnDot {
   width: 10px;
   height: 10px;

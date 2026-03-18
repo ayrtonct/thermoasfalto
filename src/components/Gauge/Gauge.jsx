@@ -1,7 +1,7 @@
 import styles from './Gauge.module.css';
 import { SENSORS, GAUGE_MIN, GAUGE_MAX } from '../../constants/sensors';
 
-export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor }) => {
+export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtual }) => {
   // SVG Arc calculation for a semi-circle (180 degrees)
   const radius = 80;
   const strokeWidth = 12;
@@ -18,9 +18,10 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor }) => {
     return { x, y };
   };
 
-  const clampedValue = Math.min(Math.max(value, GAUGE_MIN), GAUGE_MAX);
+  const safeVal = value !== null ? value : 0;
+  const clampedValue = Math.min(Math.max(safeVal, GAUGE_MIN), GAUGE_MAX);
   const percent = (clampedValue - GAUGE_MIN) / (GAUGE_MAX - GAUGE_MIN);
-  const targetPt = getCoordinatesForPercent(percent);
+  const targetPt = getCoordinatesForPercent(value !== null && leituraAtual ? percent : 0);
 
   // Define background arc
   const startBg = getCoordinatesForPercent(0);
@@ -30,13 +31,14 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor }) => {
   // Define active arc
   const pathActive = `M ${startBg.x} ${startBg.y} A ${radius} ${radius} 0 0 1 ${targetPt.x} ${targetPt.y}`;
 
-  // Color mapping logically
   let colorVar = 'var(--blue)';
-  if (clampedValue >= 35 && clampedValue < 45) colorVar = 'var(--teal)';
+  if (value === null || !leituraAtual) colorVar = 'var(--border2)';
+  else if (clampedValue >= 35 && clampedValue < 45) colorVar = 'var(--teal)';
   else if (clampedValue >= 45 && clampedValue < 52) colorVar = 'var(--accent)';
   else if (clampedValue >= 52) colorVar = 'var(--red)';
 
   const selectedSensor = SENSORS.find(s => s.id === selectedSensorId);
+  const isSelectedActive = selectedSensor && selectedSensor.active && leituraAtual && leituraAtual[`temp_${selectedSensorId}`] !== null;
 
   return (
     <div className={styles.gaugeContainer}>
@@ -59,7 +61,9 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor }) => {
           />
         </svg>
         <div className={styles.gaugeValueBox}>
-          <div className={styles.gaugeValue}>{value.toFixed(1)}°</div>
+          <div className={styles.gaugeValue}>
+            {isSelectedActive && value !== null ? value.toFixed(1) + '°' : '--'}
+          </div>
           <div className={styles.gaugeLabel}>
             {selectedSensor ? selectedSensor.label : '--'}
           </div>
@@ -70,23 +74,28 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor }) => {
       </div>
 
       <div className={styles.sensorGrid}>
-        {SENSORS.map((s) => (
-          <button
-            key={s.id}
-            className={`${styles.sensorBtn} ${selectedSensorId === s.id ? styles.active : ''}`}
-            onClick={() => onSelectSensor(s.id)}
-            style={{
-              '--s-color': s.color,
-              borderColor: selectedSensorId === s.id ? 'var(--accent)' : 'transparent'
-            }}
-          >
-            <div className={styles.btnDot}></div>
-            <div className={styles.btnMeta}>
-              <span className={styles.btnLabel}>{s.label}</span>
-              <span className={styles.btnDepth}>{s.depth}</span>
-            </div>
-          </button>
-        ))}
+        {SENSORS.map((s) => {
+          const isSensorActive = s.active && leituraAtual && leituraAtual[`temp_${s.id}`] !== null;
+          return (
+            <button
+              key={s.id}
+              disabled={!isSensorActive}
+              className={`${styles.sensorBtn} ${selectedSensorId === s.id && isSensorActive ? styles.active : ''} ${!isSensorActive ? styles.offline : ''}`}
+              onClick={() => onSelectSensor(s.id)}
+              style={{
+                '--s-color': s.color,
+                borderColor: selectedSensorId === s.id && isSensorActive ? 'var(--accent)' : 'transparent'
+              }}
+            >
+              {!isSensorActive && <div className={styles.offlineBadge}>OFFLINE</div>}
+              <div className={styles.btnDot}></div>
+              <div className={styles.btnMeta}>
+                <span className={styles.btnLabel}>{s.label}</span>
+                <span className={styles.btnDepth}>{s.depth}</span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

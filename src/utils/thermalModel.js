@@ -1,3 +1,5 @@
+import { SENSORS } from '../constants/sensors';
+
 const generateGaussianNoise = (mean, stdDev) => {
   let u = 0, v = 0;
   while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
@@ -38,15 +40,21 @@ export const generateThermalData = (timestampStr) => {
   const temp_ds3_base = m_med - a_med * Math.cos((hour - p_med) * (Math.PI / 12));
   const temp_ds5_base = m_surf - a_surf * Math.cos((hour - p_surf) * (Math.PI / 12));
 
+  const valOrNull = (id, baseVal, noise) => {
+    const sensor = SENSORS.find(s => s.id === id);
+    if (!sensor || !sensor.active) return null;
+    return Number(generateGaussianNoise(baseVal, noise).toFixed(1));
+  };
+
   // Add small variations between sensors at same depth
   return {
     data_hora: timestampStr,
-    temp_ds1: Number(generateGaussianNoise(temp_ds1_base, 0.2).toFixed(1)),
-    temp_ds2: Number(generateGaussianNoise(temp_ds1_base, 0.2).toFixed(1)),
-    temp_ds3: Number(generateGaussianNoise(temp_ds3_base, 0.3).toFixed(1)),
-    temp_ds4: Number(generateGaussianNoise(temp_ds3_base, 0.3).toFixed(1)),
-    temp_ds5: Number(generateGaussianNoise(temp_ds5_base, 0.5).toFixed(1)),
-    temp_ds6: Number(generateGaussianNoise(temp_ds5_base, 0.5).toFixed(1))
+    temp_ds1: valOrNull('ds1', temp_ds1_base, 0.2),
+    temp_ds2: valOrNull('ds2', temp_ds1_base, 0.2),
+    temp_ds3: valOrNull('ds3', temp_ds3_base, 0.3),
+    temp_ds4: valOrNull('ds4', temp_ds3_base, 0.3),
+    temp_ds5: valOrNull('ds5', temp_ds5_base, 0.5),
+    temp_ds6: valOrNull('ds6', temp_ds5_base, 0.5)
   };
 };
 

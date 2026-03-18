@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSensorData } from './hooks/useSensorData';
-import { ALERT_THRESHOLD } from './constants/sensors';
+import { SENSORS, ALERT_THRESHOLD } from './constants/sensors';
 
 import { Header } from './components/Header/Header';
 import { AlertStrip } from './components/AlertStrip/AlertStrip';
@@ -26,6 +26,17 @@ function App() {
   } = useSensorData();
 
   const [selectedSensorId, setSelectedSensorId] = useState('ds5'); // Default to DS5 (superfície)
+
+  // Auto select active sensor
+  useEffect(() => {
+    if (leituraAtual) {
+      const selected = SENSORS.find(s => s.id === selectedSensorId);
+      if (!selected || !selected.active || leituraAtual[`temp_${selectedSensorId}`] === null) {
+        const firstActive = SENSORS.find(s => s.active && leituraAtual[`temp_${s.id}`] !== null);
+        if (firstActive) setSelectedSensorId(firstActive.id);
+      }
+    }
+  }, [leituraAtual, selectedSensorId]);
 
   // Check alerts
   const alerts = [];
@@ -62,6 +73,7 @@ function App() {
               value={selectedSensorValue} 
               selectedSensorId={selectedSensorId} 
               onSelectSensor={setSelectedSensorId} 
+              leituraAtual={leituraAtual}
             />
           </div>
           <div className={styles.chartWrapper}>
