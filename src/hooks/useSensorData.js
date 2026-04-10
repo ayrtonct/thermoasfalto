@@ -34,7 +34,7 @@ export const useSensorData = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const res = await fetch(`${API_BASE}/api/leitura_atual`, {
+      const res = await fetch(`${API_BASE}/api/medicoes/recentes`, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -42,7 +42,7 @@ export const useSensorData = () => {
       if (!res.ok) throw new Error('Status not OK');
       
       const data = await res.json();
-      setLeituraAtual(sanitizeData(data));
+      setLeituraAtual(sanitizeData(Array.isArray(data) && data.length > 0 ? data[0] : null));
       // Determine if it was running demo and recovered? Maybe if we wanted.
       // But user said: "Se a API não responder, cair silenciosamente em modo demo"
       // If we got here, we are not in demo (unless manually forced)
@@ -101,7 +101,7 @@ export const useSensorData = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       
-      const res = await fetch(`${API_BASE}/api/historico?de=${deStr}&ate=${ateStr}`, {
+      const res = await fetch(`${API_BASE}/api/medicoes?inicio=${deStr}&fim=${ateStr}`, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
