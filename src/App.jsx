@@ -22,7 +22,8 @@ function App() {
     customRange,
     setCustomRange,
     isDemo,
-    isLoading
+    isLoading,
+    nodeStatuses
   } = useSensorData();
 
   const [selectedSensorId, setSelectedSensorId] = useState('ds5'); // Default to DS5 (superfície)
@@ -57,6 +58,7 @@ function App() {
         isDemo={isDemo} 
         isOnline={leituraAtual !== null} 
         lastUpdate={leituraAtual ? leituraAtual.data_hora : null} 
+        nodeStatuses={nodeStatuses}
       />
       
       <AlertStrip alerts={alerts} />

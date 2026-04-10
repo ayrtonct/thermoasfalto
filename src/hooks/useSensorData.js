@@ -19,6 +19,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 export const useSensorData = () => {
   const [leituraAtual, setLeituraAtual] = useState(null);
   const [historico, setHistorico] = useState([]);
+  const [nodeStatuses, setNodeStatuses] = useState([]);
   
   // Period filter states: '30M', '1H', '3H', '6H', '12H', '24H', 'LIVRE'
   const [periodo, setPeriodo] = useState('6H'); 
@@ -137,12 +138,29 @@ export const useSensorData = () => {
     }
   }, [periodo, customRange, isDemo]);
 
+  const fetchStatus = useCallback(async () => {
+    if (isDemo) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/status`);
+      if (res.ok) {
+        const data = await res.json();
+        setNodeStatuses(data);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar status dos nós', err);
+    }
+  }, [isDemo]);
+
   // Initial fetch and polling for current reading
   useEffect(() => {
     fetchAtual(); // init immediately
-    const intervalId = setInterval(fetchAtual, 30000);
+    fetchStatus();
+    const intervalId = setInterval(() => {
+      fetchAtual();
+      fetchStatus();
+    }, 30000);
     return () => clearInterval(intervalId);
-  }, [fetchAtual]);
+  }, [fetchAtual, fetchStatus]);
 
   // Fetch history when period, custom range changes or fallback demo triggers
   useEffect(() => {
@@ -158,6 +176,7 @@ export const useSensorData = () => {
     setCustomRange,
     isDemo,
     isLoading,
-    error
+    error,
+    nodeStatuses
   };
 };
