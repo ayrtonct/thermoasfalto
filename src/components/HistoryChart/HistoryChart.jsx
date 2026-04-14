@@ -72,7 +72,7 @@ export const HistoryChart = ({
 
   const chartData = useMemo(() => {
     if (!historico || historico.length === 0) {
-      return { datasets: [], hasMultiDayRange: false };
+      return { datasets: [], hasMultiDayRange: false, minX: null, maxX: null };
     }
 
     const orderedHistory = [...historico]
@@ -80,12 +80,14 @@ export const HistoryChart = ({
       .sort((a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime());
 
     if (orderedHistory.length === 0) {
-      return { datasets: [], hasMultiDayRange: false };
+      return { datasets: [], hasMultiDayRange: false, minX: null, maxX: null };
     }
 
     const firstTimestamp = new Date(orderedHistory[0].data_hora);
     const lastTimestamp = new Date(orderedHistory[orderedHistory.length - 1].data_hora);
     const hasMultiDayRange = firstTimestamp.toDateString() !== lastTimestamp.toDateString();
+    const minX = firstTimestamp.getTime();
+    const maxX = lastTimestamp.getTime();
 
     const datasets = SENSORS.filter((sensor) => sensor.active).map((sensor) => {
       const dataKey = `temp_${sensor.id}`;
@@ -108,7 +110,7 @@ export const HistoryChart = ({
       };
     });
 
-    return { datasets, hasMultiDayRange };
+    return { datasets, hasMultiDayRange, minX, maxX };
   }, [historico, hiddenDatasets]);
 
   const chartOptions = {
@@ -152,6 +154,10 @@ export const HistoryChart = ({
     scales: {
       x: {
         type: 'linear',
+        bounds: 'data',
+        offset: false,
+        min: chartData.minX ?? undefined,
+        max: chartData.maxX ?? undefined,
         grid: {
           color: '#1f2330',
           drawBorder: false,
