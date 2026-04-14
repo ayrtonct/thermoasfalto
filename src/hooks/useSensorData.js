@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateThermalData, generateHistory } from '../utils/thermalModel';
-import { safeValue } from '../utils/dataHelpers';
+import { safeValue, buildSensorStats } from '../utils/dataHelpers';
+import { SENSORS } from '../constants/sensors';
 
 const sanitizeData = (item) => {
   if (!item) return null;
@@ -19,6 +20,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 export const useSensorData = () => {
   const [leituraAtual, setLeituraAtual] = useState(null);
   const [historico, setHistorico] = useState([]);
+  const [sensorStats, setSensorStats] = useState([]);
   const [nodeStatuses, setNodeStatuses] = useState([]);
   
   // Period filter states: '30M', '1H', '3H', '6H', '12H', '24H', 'LIVRE'
@@ -138,6 +140,41 @@ export const useSensorData = () => {
     }
   }, [periodo, customRange, isDemo]);
 
+  const fetchSensorStats = useCallback(async () => {
+    try {
+      if (isDemo) {
+        const now = new Date();
+        const from = new Date(now);
+        from.setHours(from.getHours() - 24);
+
+        const deStr = new Date(from.getTime() - (from.getTimezoneOffset() * 60000)).toISOString().substring(0, 19);
+        const ateStr = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().substring(0, 19);
+        const demoHistory = generateHistory(deStr, ateStr).map(sanitizeData);
+        setSensorStats(buildSensorStats(demoHistory, SENSORS));
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const res = await fetch(`${API_BASE}/api/medicoes/estatisticas`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error('Status not OK');
+
+      const data = await res.json();
+      setSensorStats(
+        Array.isArray(data) && data.length > 0
+          ? data
+          : buildSensorStats(historico, SENSORS)
+      );
+    } catch (err) {
+      setSensorStats(buildSensorStats(historico, SENSORS));
+    }
+  }, [historico, isDemo]);
+
   const fetchStatus = useCallback(async () => {
     if (isDemo) return;
     try {
@@ -155,12 +192,14 @@ export const useSensorData = () => {
   useEffect(() => {
     fetchAtual(); // init immediately
     fetchStatus();
+    fetchSensorStats();
     const intervalId = setInterval(() => {
       fetchAtual();
       fetchStatus();
+      fetchSensorStats();
     }, 30000);
     return () => clearInterval(intervalId);
-  }, [fetchAtual, fetchStatus]);
+  }, [fetchAtual, fetchStatus, fetchSensorStats]);
 
   // Fetch history when period, custom range changes or fallback demo triggers
   useEffect(() => {
@@ -177,6 +216,7 @@ export const useSensorData = () => {
     isDemo,
     isLoading,
     error,
-    nodeStatuses
+    nodeStatuses,
+    sensorStats
   };
 };

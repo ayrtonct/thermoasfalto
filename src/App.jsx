@@ -17,6 +17,7 @@ function App() {
   const {
     leituraAtual,
     historico,
+    sensorStats,
     periodo,
     setPeriodo,
     customRange,
@@ -98,7 +99,7 @@ function App() {
           </div>
           <div className={styles.bottomCol}>
             <StatsTable 
-              historico={historico} 
+              stats={sensorStats}
             />
           </div>
         </div>

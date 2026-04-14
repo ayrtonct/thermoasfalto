@@ -1,49 +1,41 @@
-import { useMemo } from 'react';
 import styles from './StatsTable.module.css';
 import { SENSORS } from '../../constants/sensors';
-import { isValidReading } from '../../utils/dataHelpers';
 
-export const StatsTable = ({ historico }) => {
-  const stats = useMemo(() => {
-    if (!historico || historico.length === 0) return [];
+export const StatsTable = ({ stats }) => {
+  const statsBySensor = new Map((stats || []).map((item) => [item.sensor_id, item]));
 
-    return SENSORS.map(sensor => {
-      if (!sensor.active) {
-        return { ...sensor, isOffline: true };
-      }
+  const rows = SENSORS.map((sensor) => {
+    if (!sensor.active) {
+      return { ...sensor, isOffline: true };
+    }
 
-      const key = `temp_${sensor.id}`;
-      const values = historico.map(d => d[key]);
-      const validValues = values.filter(isValidReading);
-      
-      if (validValues.length === 0) {
-        return { ...sensor, isOffline: false, noData: true };
-      }
+    const sensorStats = statsBySensor.get(sensor.id);
 
-      const max = Math.max(...validValues);
-      const min = Math.min(...validValues);
-      const sum = validValues.reduce((a, b) => a + b, 0);
-      const avg = sum / validValues.length;
-      const amp = max - min;
+    if (!sensorStats || !sensorStats.count) {
+      return { ...sensor, isOffline: false, noData: true };
+    }
 
-      return {
-        ...sensor,
-        isOffline: false,
-        max,
-        min,
-        avg,
-        amp
-      };
-    });
-  }, [historico]);
+    return {
+      ...sensor,
+      isOffline: false,
+      avg: sensorStats.avg,
+      max: sensorStats.max,
+      min: sensorStats.min,
+      amp: sensorStats.max - sensorStats.min,
+    };
+  });
 
-  if (!historico || historico.length === 0) {
+  if (!stats || stats.length === 0) {
     return <div className={styles.container}>Aguardando dados...</div>;
   }
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>Estatísticas por Sensor</h3>
+      <div className={styles.header}>
+        <h3 className={styles.title}>Estatísticas por Sensor</h3>
+        <span className={styles.scope}>Histórico completo do banco</span>
+      </div>
+
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
@@ -57,20 +49,35 @@ export const StatsTable = ({ historico }) => {
             </tr>
           </thead>
           <tbody>
-            {stats.map(s => (
-              <tr key={s.id} className={s.isOffline || s.noData ? styles.offlineRow : ''}>
+            {rows.map((sensor) => (
+              <tr
+                key={sensor.id}
+                className={sensor.isOffline || sensor.noData ? styles.offlineRow : ''}
+              >
                 <td>
                   <div className={styles.sensorCell}>
-                    <span className={styles.dot} style={{ backgroundColor: s.color }}></span>
-                    <span className={styles.label}>{s.label}</span>
-                    {s.isOffline && <span className={styles.offlineBadge}>OFFLINE</span>}
+                    <span className={styles.dot} style={{ backgroundColor: sensor.color }}></span>
+                    <span className={styles.label}>{sensor.label}</span>
+                    {sensor.isOffline && <span className={styles.offlineBadge}>OFFLINE</span>}
                   </div>
                 </td>
-                <td className={styles.depth}>{s.depth}</td>
-                <td className={styles.numCol}>{s.isOffline || s.noData ? '--' : `${s.avg.toFixed(1)}°`}</td>
-                <td className={`${styles.numCol} ${(!s.isOffline && !s.noData) ? styles.high : ''}`}>{s.isOffline || s.noData ? '--' : `${s.max.toFixed(1)}°`}</td>
-                <td className={`${styles.numCol} ${(!s.isOffline && !s.noData) ? styles.low : ''}`}>{s.isOffline || s.noData ? '--' : `${s.min.toFixed(1)}°`}</td>
-                <td className={styles.numCol}>{s.isOffline || s.noData ? '--' : `${s.amp.toFixed(1)}°`}</td>
+                <td className={styles.depth}>{sensor.depth}</td>
+                <td className={styles.numCol}>
+                  {sensor.isOffline || sensor.noData ? '--' : `${sensor.avg.toFixed(1)}°`}
+                </td>
+                <td
+                  className={`${styles.numCol} ${(!sensor.isOffline && !sensor.noData) ? styles.high : ''}`}
+                >
+                  {sensor.isOffline || sensor.noData ? '--' : `${sensor.max.toFixed(1)}°`}
+                </td>
+                <td
+                  className={`${styles.numCol} ${(!sensor.isOffline && !sensor.noData) ? styles.low : ''}`}
+                >
+                  {sensor.isOffline || sensor.noData ? '--' : `${sensor.min.toFixed(1)}°`}
+                </td>
+                <td className={styles.numCol}>
+                  {sensor.isOffline || sensor.noData ? '--' : `${sensor.amp.toFixed(1)}°`}
+                </td>
               </tr>
             ))}
           </tbody>

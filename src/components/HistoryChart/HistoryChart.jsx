@@ -12,6 +12,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import styles from './HistoryChart.module.css';
 import { SENSORS } from '../../constants/sensors';
+import { exportHistoryToCsv } from '../../utils/exportHelpers';
 
 ChartJS.register(
   CategoryScale,
@@ -33,6 +34,16 @@ export const HistoryChart = ({
   const [localRange, setLocalRange] = useState({ de: customRange.de, ate: customRange.ate });
   const [hiddenDatasets, setHiddenDatasets] = useState({});
 
+  const getExportFileName = () => {
+    if (periodo === 'LIVRE' && customRange.de && customRange.ate) {
+      const de = customRange.de.replace(/[:T]/g, '-')
+      const ate = customRange.ate.replace(/[:T]/g, '-')
+      return `historico_${de}_a_${ate}`
+    }
+
+    return `historico_${periodo.toLowerCase()}`
+  }
+
   const toggleDataset = (id) => {
     setHiddenDatasets(prev => ({
       ...prev,
@@ -44,12 +55,18 @@ export const HistoryChart = ({
     setCustomRange(localRange);
   };
 
+  const handleExport = () => {
+    exportHistoryToCsv(historico, getExportFileName());
+  };
+
   const chartData = useMemo(() => {
     if (!historico || historico.length === 0) {
       return { labels: [], datasets: [] };
     }
 
-    const labels = historico.map(d => {
+    const reversedHistorico = [...historico].reverse();
+
+    const labels = reversedHistorico.map(d => {
       const date = new Date(d.data_hora);
       return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     });
@@ -59,7 +76,7 @@ export const HistoryChart = ({
       const dataKey = `temp_${sensor.id}`;
       return {
         label: sensor.label,
-        data: historico.map(d => d[dataKey]),
+        data: reversedHistorico.map(d => d[dataKey]),
         borderColor: sensor.color,
         backgroundColor: sensor.color,
         borderWidth: 2,
@@ -135,21 +152,32 @@ export const HistoryChart = ({
       <div className={styles.header}>
         <h3 className={styles.title}>Histórico Térmico</h3>
         <div className={styles.controls}>
-          <div className={styles.periodGroup}>
-            {periods.map(p => (
+          <div className={styles.topControls}>
+            <div className={styles.periodGroup}>
+              {periods.map(p => (
+                <button
+                  key={p}
+                  className={`${styles.periodBtn} ${periodo === p ? styles.active : ''}`}
+                  onClick={() => setPeriodo(p)}
+                >
+                  {p}
+                </button>
+              ))}
               <button
-                key={p}
-                className={`${styles.periodBtn} ${periodo === p ? styles.active : ''}`}
-                onClick={() => setPeriodo(p)}
+                className={`${styles.periodBtn} ${periodo === 'LIVRE' ? styles.active : ''}`}
+                onClick={() => setPeriodo('LIVRE')}
               >
-                {p}
+                LIVRE
               </button>
-            ))}
+            </div>
+
             <button
-              className={`${styles.periodBtn} ${periodo === 'LIVRE' ? styles.active : ''}`}
-              onClick={() => setPeriodo('LIVRE')}
+              className={styles.exportBtn}
+              onClick={handleExport}
+              disabled={!historico || historico.length === 0}
+              title="Baixar histórico atual em CSV compatível com Excel"
             >
-              LIVRE
+              Exportar CSV
             </button>
           </div>
           

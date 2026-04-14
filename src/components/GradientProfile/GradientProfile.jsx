@@ -62,7 +62,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
           
           <div className={styles.barItem} style={{ opacity: currentSurf === null ? 0.5 : 1 }}>
             <div className={styles.labelGroup}>
-              <span className={styles.depth}>4 cm</span>
+              <span className={styles.depth}>0 cm</span>
               <span className={styles.layer}>Superfície</span>
             </div>
             {currentSurf !== null ? (
@@ -102,7 +102,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
 
           <div className={styles.barItem} style={{ opacity: currentBase === null ? 0.5 : 1 }}>
             <div className={styles.labelGroup}>
-              <span className={styles.depth}>0 cm</span>
+              <span className={styles.depth}>4 cm</span>
               <span className={styles.layer}>Base</span>
             </div>
             {currentBase !== null ? (
