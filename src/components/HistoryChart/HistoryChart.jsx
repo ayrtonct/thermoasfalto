@@ -1,56 +1,32 @@
 import { useState, useMemo } from 'react';
 import {
   Chart as ChartJS,
-  CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import styles from './HistoryChart.module.css';
 import { SENSORS } from '../../constants/sensors';
 import { exportHistoryToCsv } from '../../utils/exportHelpers';
 
-const HALF_HOUR_MS = 30 * 60 * 1000;
-
-const getHalfHourBucket = (value) => {
+const formatTimeLabel = (value, includeDate = false) => {
   const date = new Date(value);
-  const timestamp = date.getTime();
 
-  if (Number.isNaN(timestamp)) return null;
+  if (Number.isNaN(date.getTime())) return '--:--';
 
-  return Math.round(timestamp / HALF_HOUR_MS) * HALF_HOUR_MS;
-};
-
-const normalizeHistoryToHalfHour = (records) => {
-  const grouped = new Map();
-
-  records.forEach((record) => {
-    const bucket = getHalfHourBucket(record.data_hora);
-    if (bucket === null) return;
-
-    const current = grouped.get(bucket);
-    const currentTime = current ? new Date(current.data_hora).getTime() : -Infinity;
-    const recordTime = new Date(record.data_hora).getTime();
-
-    if (!current || recordTime >= currentTime) {
-      grouped.set(bucket, {
-        ...record,
-        data_hora: new Date(bucket).toISOString(),
-      });
-    }
-  });
-
-  return Array.from(grouped.values()).sort(
-    (a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
+  return date.toLocaleString(
+    'pt-BR',
+    includeDate
+      ? { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }
+      : { hour: '2-digit', minute: '2-digit' }
   );
 };
 
 ChartJS.register(
-  CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
@@ -59,30 +35,30 @@ ChartJS.register(
   Legend
 );
 
-export const HistoryChart = ({ 
-  historico, 
-  periodo, 
-  setPeriodo, 
-  customRange, 
-  setCustomRange 
+export const HistoryChart = ({
+  historico,
+  periodo,
+  setPeriodo,
+  customRange,
+  setCustomRange,
 }) => {
   const [localRange, setLocalRange] = useState({ de: customRange.de, ate: customRange.ate });
   const [hiddenDatasets, setHiddenDatasets] = useState({});
 
   const getExportFileName = () => {
     if (periodo === 'LIVRE' && customRange.de && customRange.ate) {
-      const de = customRange.de.replace(/[:T]/g, '-')
-      const ate = customRange.ate.replace(/[:T]/g, '-')
-      return `historico_${de}_a_${ate}`
+      const de = customRange.de.replace(/[:T]/g, '-');
+      const ate = customRange.ate.replace(/[:T]/g, '-');
+      return `historico_${de}_a_${ate}`;
     }
 
-    return `historico_${periodo.toLowerCase()}`
-  }
+    return `historico_${periodo.toLowerCase()}`;
+  };
 
   const toggleDataset = (id) => {
-    setHiddenDatasets(prev => ({
+    setHiddenDatasets((prev) => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: !prev[id],
     }));
   };
 
@@ -96,22 +72,30 @@ export const HistoryChart = ({
 
   const chartData = useMemo(() => {
     if (!historico || historico.length === 0) {
-      return { labels: [], datasets: [] };
+      return { datasets: [], hasMultiDayRange: false };
     }
 
-    const normalizedHistory = normalizeHistoryToHalfHour(historico);
+    const orderedHistory = [...historico]
+      .filter((record) => !Number.isNaN(new Date(record.data_hora).getTime()))
+      .sort((a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime());
 
-    const labels = normalizedHistory.map(d => {
-      const date = new Date(d.data_hora);
-      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    });
+    if (orderedHistory.length === 0) {
+      return { datasets: [], hasMultiDayRange: false };
+    }
 
-    const activeSensors = SENSORS.filter(s => s.active);
-    const datasets = activeSensors.map(sensor => {
+    const firstTimestamp = new Date(orderedHistory[0].data_hora);
+    const lastTimestamp = new Date(orderedHistory[orderedHistory.length - 1].data_hora);
+    const hasMultiDayRange = firstTimestamp.toDateString() !== lastTimestamp.toDateString();
+
+    const datasets = SENSORS.filter((sensor) => sensor.active).map((sensor) => {
       const dataKey = `temp_${sensor.id}`;
+
       return {
         label: sensor.label,
-        data: normalizedHistory.map(d => d[dataKey]),
+        data: orderedHistory.map((record) => ({
+          x: new Date(record.data_hora).getTime(),
+          y: record[dataKey],
+        })),
         borderColor: sensor.color,
         backgroundColor: sensor.color,
         borderWidth: 2,
@@ -120,11 +104,11 @@ export const HistoryChart = ({
         tension: 0,
         spanGaps: false,
         hidden: hiddenDatasets[sensor.id] || false,
-        sensorId: sensor.id, // custom prop
+        sensorId: sensor.id,
       };
     });
 
-    return { labels, datasets };
+    return { datasets, hasMultiDayRange };
   }, [historico, hiddenDatasets]);
 
   const chartOptions = {
@@ -132,11 +116,12 @@ export const HistoryChart = ({
     maintainAspectRatio: false,
     interaction: {
       mode: 'index',
+      axis: 'x',
       intersect: false,
     },
     plugins: {
       legend: {
-        display: false // We use custom interactive legend
+        display: false,
       },
       tooltip: {
         backgroundColor: '#181b22',
@@ -149,10 +134,24 @@ export const HistoryChart = ({
         padding: 12,
         boxPadding: 6,
         usePointStyle: true,
-      }
+        callbacks: {
+          title: (items) => {
+            if (!items.length) return '';
+            return formatTimeLabel(items[0].parsed.x, true);
+          },
+          label: (item) => {
+            if (item.parsed.y === null || item.parsed.y === undefined) {
+              return `${item.dataset.label}: --`;
+            }
+
+            return `${item.dataset.label}: ${item.parsed.y.toFixed(3)}`;
+          },
+        },
+      },
     },
     scales: {
       x: {
+        type: 'linear',
         grid: {
           color: '#1f2330',
           drawBorder: false,
@@ -162,7 +161,8 @@ export const HistoryChart = ({
           font: { family: 'Space Mono', size: 10 },
           maxTicksLimit: 8,
           maxRotation: 0,
-        }
+          callback: (value) => formatTimeLabel(Number(value), chartData.hasMultiDayRange),
+        },
       },
       y: {
         min: 20,
@@ -174,10 +174,10 @@ export const HistoryChart = ({
         ticks: {
           color: '#8b92a8',
           font: { family: 'Space Mono', size: 11 },
-          callback: (value) => `${value}°C`
-        }
-      }
-    }
+          callback: (value) => `${value}°C`,
+        },
+      },
+    },
   };
 
   const periods = ['30M', '1H', '3H', '6H', '12H', '24H'];
@@ -189,7 +189,7 @@ export const HistoryChart = ({
         <div className={styles.controls}>
           <div className={styles.topControls}>
             <div className={styles.periodGroup}>
-              {periods.map(p => (
+              {periods.map((p) => (
                 <button
                   key={p}
                   className={`${styles.periodBtn} ${periodo === p ? styles.active : ''}`}
@@ -215,23 +215,25 @@ export const HistoryChart = ({
               Exportar CSV
             </button>
           </div>
-          
+
           {periodo === 'LIVRE' && (
             <div className={styles.customRange}>
-              <input 
-                type="datetime-local" 
+              <input
+                type="datetime-local"
                 className={styles.dateInput}
                 value={localRange.de}
-                onChange={(e) => setLocalRange(prev => ({...prev, de: e.target.value}))}
+                onChange={(e) => setLocalRange((prev) => ({ ...prev, de: e.target.value }))}
               />
               <span className={styles.rangeSep}>ate</span>
-              <input 
-                type="datetime-local" 
+              <input
+                type="datetime-local"
                 className={styles.dateInput}
                 value={localRange.ate}
-                onChange={(e) => setLocalRange(prev => ({...prev, ate: e.target.value}))}
+                onChange={(e) => setLocalRange((prev) => ({ ...prev, ate: e.target.value }))}
               />
-              <button className={styles.applyBtn} onClick={handleApplyCustom}>Aplicar</button>
+              <button className={styles.applyBtn} onClick={handleApplyCustom}>
+                Aplicar
+              </button>
             </div>
           )}
         </div>
@@ -242,19 +244,22 @@ export const HistoryChart = ({
       </div>
 
       <div className={styles.legend}>
-        {SENSORS.filter(s => s.active).map(s => {
-          const isHidden = hiddenDatasets[s.id];
+        {SENSORS.filter((sensor) => sensor.active).map((sensor) => {
+          const isHidden = hiddenDatasets[sensor.id];
+
           return (
-            <div 
-              key={s.id} 
+            <div
+              key={sensor.id}
               className={`${styles.legendItem} ${isHidden ? styles.hidden : ''}`}
-              onClick={() => toggleDataset(s.id)}
+              onClick={() => toggleDataset(sensor.id)}
             >
-              <span 
-                className={styles.legendDot} 
-                style={{ backgroundColor: isHidden ? '#2a2f3e' : s.color }} 
+              <span
+                className={styles.legendDot}
+                style={{ backgroundColor: isHidden ? '#2a2f3e' : sensor.color }}
               />
-              <span className={styles.legendLabel}>{s.label} ({s.depth})</span>
+              <span className={styles.legendLabel}>
+                {sensor.label} ({sensor.depth})
+              </span>
             </div>
           );
         })}
