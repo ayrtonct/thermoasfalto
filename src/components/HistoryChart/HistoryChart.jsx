@@ -14,6 +14,41 @@ import styles from './HistoryChart.module.css';
 import { SENSORS } from '../../constants/sensors';
 import { exportHistoryToCsv } from '../../utils/exportHelpers';
 
+const HALF_HOUR_MS = 30 * 60 * 1000;
+
+const getHalfHourBucket = (value) => {
+  const date = new Date(value);
+  const timestamp = date.getTime();
+
+  if (Number.isNaN(timestamp)) return null;
+
+  return Math.round(timestamp / HALF_HOUR_MS) * HALF_HOUR_MS;
+};
+
+const normalizeHistoryToHalfHour = (records) => {
+  const grouped = new Map();
+
+  records.forEach((record) => {
+    const bucket = getHalfHourBucket(record.data_hora);
+    if (bucket === null) return;
+
+    const current = grouped.get(bucket);
+    const currentTime = current ? new Date(current.data_hora).getTime() : -Infinity;
+    const recordTime = new Date(record.data_hora).getTime();
+
+    if (!current || recordTime >= currentTime) {
+      grouped.set(bucket, {
+        ...record,
+        data_hora: new Date(bucket).toISOString(),
+      });
+    }
+  });
+
+  return Array.from(grouped.values()).sort(
+    (a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
+  );
+};
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -64,9 +99,9 @@ export const HistoryChart = ({
       return { labels: [], datasets: [] };
     }
 
-    const reversedHistorico = [...historico].reverse();
+    const normalizedHistory = normalizeHistoryToHalfHour(historico);
 
-    const labels = reversedHistorico.map(d => {
+    const labels = normalizedHistory.map(d => {
       const date = new Date(d.data_hora);
       return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     });
@@ -76,13 +111,13 @@ export const HistoryChart = ({
       const dataKey = `temp_${sensor.id}`;
       return {
         label: sensor.label,
-        data: reversedHistorico.map(d => d[dataKey]),
+        data: normalizedHistory.map(d => d[dataKey]),
         borderColor: sensor.color,
         backgroundColor: sensor.color,
         borderWidth: 2,
-        pointRadius: 0,
+        pointRadius: 3,
         pointHoverRadius: 4,
-        tension: 0.4, // Smooth lines
+        tension: 0,
         spanGaps: false,
         hidden: hiddenDatasets[sensor.id] || false,
         sensorId: sensor.id, // custom prop
