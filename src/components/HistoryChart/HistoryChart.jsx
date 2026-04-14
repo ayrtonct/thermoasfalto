@@ -99,7 +99,7 @@ export const HistoryChart = ({
         borderColor: sensor.color,
         backgroundColor: sensor.color,
         borderWidth: 2,
-        pointRadius: 3,
+        pointRadius: 0,
         pointHoverRadius: 4,
         tension: 0,
         spanGaps: false,
