@@ -33,7 +33,7 @@ export const StatsTable = ({ stats }) => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h3 className={styles.title}>Estatísticas por Sensor</h3>
-        <span className={styles.scope}>Histórico completo do banco</span>
+        <span className={styles.scope}>Período selecionado</span>
       </div>
 
       <div className={styles.tableWrapper}>

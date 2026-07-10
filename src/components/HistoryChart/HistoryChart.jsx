@@ -41,6 +41,10 @@ export const HistoryChart = ({
   setPeriodo,
   customRange,
   setCustomRange,
+  isLoading,
+  error,
+  collectionPointName,
+  collectionPointId,
 }) => {
   const [localRange, setLocalRange] = useState({ de: customRange.de, ate: customRange.ate });
   const [hiddenDatasets, setHiddenDatasets] = useState({});
@@ -49,10 +53,10 @@ export const HistoryChart = ({
     if (periodo === 'LIVRE' && customRange.de && customRange.ate) {
       const de = customRange.de.replace(/[:T]/g, '-');
       const ate = customRange.ate.replace(/[:T]/g, '-');
-      return `historico_${de}_a_${ate}`;
+      return `historico_${collectionPointId}_${de}_a_${ate}`;
     }
 
-    return `historico_${periodo.toLowerCase()}`;
+    return `historico_${collectionPointId}_${periodo.toLowerCase()}`;
   };
 
   const toggleDataset = (id) => {
@@ -191,6 +195,7 @@ export const HistoryChart = ({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
+        {collectionPointName && <span className={styles.pointName}>{collectionPointName}</span>}
         <h3 className={styles.title}>Histórico Térmico</h3>
         <div className={styles.controls}>
           <div className={styles.topControls}>
@@ -246,7 +251,10 @@ export const HistoryChart = ({
       </div>
 
       <div className={styles.chartWrapper}>
-        <Line data={chartData} options={chartOptions} />
+        {isLoading ? <div className={styles.emptyMessage}>Carregando historico...</div>
+          : error ? <div className={styles.errorMessage}>{error}</div>
+            : chartData.datasets.length === 0 ? <div className={styles.emptyMessage}>Ainda nao existem medicoes para este ponto.</div>
+              : <Line data={chartData} options={chartOptions} />}
       </div>
 
       <div className={styles.legend}>

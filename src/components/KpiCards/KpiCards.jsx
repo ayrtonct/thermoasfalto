@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import styles from './KpiCards.module.css';
 import { safeAvg, isValidReading } from '../../utils/dataHelpers';
 
@@ -22,22 +21,13 @@ const KpiCard = ({ title, value, unit, previousValue }) => {
 };
 
 export const KpiCards = ({ leituraAtual, historico }) => {
-  const [prevLeitura, setPrevLeitura] = useState(null);
-
-  // Guard the previous reading for deltass
-  useEffect(() => {
-    if (leituraAtual) {
-      setPrevLeitura((prev) => {
-        // Only update prev if timestamp is different
-        if (prev && prev.data_hora !== leituraAtual.data_hora) return leituraAtual;
-        if (!prev) return leituraAtual; // initialize
-        return prev;
-      });
-    }
-  }, [leituraAtual]);
-
   // If no data yet
   if (!leituraAtual) return <div className={styles.container}>Carregando KPIs...</div>;
+
+  // The history is already filtered by collection point in the data hook.
+  const prevLeitura = [...(historico || [])]
+    .filter((reading) => reading.data_hora !== leituraAtual.data_hora)
+    .sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())[0] || null;
 
   const currentSurf = safeAvg(leituraAtual.temp_ds5, leituraAtual.temp_ds6);
   const currentMed = safeAvg(leituraAtual.temp_ds3, leituraAtual.temp_ds4);

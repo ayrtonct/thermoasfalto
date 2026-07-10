@@ -24,6 +24,12 @@
   color: var(--text);
 }
 
+.pointName {
+  color: var(--text2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
 .controls {
   display: flex;
   flex-direction: column;
@@ -142,6 +148,18 @@
   position: relative;
   min-height: 0; 
 }
+
+.emptyMessage, .errorMessage {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--text2);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.errorMessage { color: var(--red); }
 
 .legend {
   display: flex;
