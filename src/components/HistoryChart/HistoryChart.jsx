@@ -93,7 +93,7 @@ export const HistoryChart = ({
     const minX = firstTimestamp.getTime();
     const maxX = lastTimestamp.getTime();
 
-    const datasets = SENSORS.filter((sensor) => sensor.active).map((sensor) => {
+    const datasets = SENSORS.map((sensor) => {
       const dataKey = `temp_${sensor.id}`;
 
       return {
@@ -258,7 +258,7 @@ export const HistoryChart = ({
       </div>
 
       <div className={styles.legend}>
-        {SENSORS.filter((sensor) => sensor.active).map((sensor) => {
+        {SENSORS.map((sensor) => {
           const isHidden = hiddenDatasets[sensor.id];
 
           return (

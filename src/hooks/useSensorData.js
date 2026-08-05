@@ -5,10 +5,10 @@ import { SENSORS } from '../constants/sensors';
 import {
   buildApiUrl,
   getAvailableCollectionPoints,
-  getReadingForSensor,
-  getRecordsForSensor,
+  getReadingForCollectionPoint,
+  getRecordsForCollectionPoint,
   normalizeReadingsResponse,
-  resolveValidatedSensorId,
+  resolveValidatedCollectionPoint,
 } from '../utils/collectionPoints';
 import { fetchJsonWithTimeout } from '../utils/apiRequest';
 
@@ -17,6 +17,7 @@ const DEMO_FALLBACK_ENABLED = import.meta.env.VITE_ENABLE_DEMO_FALLBACK === 'tru
 const DEMO_SENSOR_ID = 'demo';
 const REFRESH_INTERVAL_MS = 30000;
 const STORAGE_KEY = 'rssf.selectedSensorId';
+const FULL_HISTORY_START = '1970-01-01T00:00:00';
 
 const getSavedSensorId = () => {
   try {
@@ -64,6 +65,8 @@ export const useSensorData = () => {
   const [leituraAtual, setLeituraAtual] = useState(null);
   const [historico, setHistorico] = useState([]);
   const [sensorStats, setSensorStats] = useState([]);
+  const [fullHistory, setFullHistory] = useState([]);
+  const [fullHistoryStats, setFullHistoryStats] = useState([]);
   const [nodeStatuses, setNodeStatuses] = useState([]);
   const [availableCollectionPoints, setAvailableCollectionPoints] = useState(null);
   const [selectedSensorId, setSelectedSensorId] = useState(getSavedSensorId);
@@ -76,28 +79,33 @@ export const useSensorData = () => {
   const [pointsError, setPointsError] = useState(null);
   const [currentError, setCurrentError] = useState(null);
   const [historyError, setHistoryError] = useState(null);
+  const [fullHistoryError, setFullHistoryError] = useState(null);
+  const [isFullHistoryLoading, setIsFullHistoryLoading] = useState(false);
   const dataRequestId = useRef(0);
+  const fullHistoryRequestId = useRef(0);
   const hasLoadedPointsRef = useRef(false);
 
-  const activeSelectedSensorId = useMemo(
-    () => resolveValidatedSensorId(availableCollectionPoints, selectedSensorId),
+  const activeSelectedPoint = useMemo(
+    () => resolveValidatedCollectionPoint(availableCollectionPoints, selectedSensorId),
     [availableCollectionPoints, selectedSensorId],
   );
 
   useEffect(() => {
-    if (!activeSelectedSensorId) return;
+    if (!activeSelectedPoint) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, activeSelectedSensorId);
+      window.localStorage.setItem(STORAGE_KEY, activeSelectedPoint.pointKey);
     } catch {
       // Storage can be unavailable in private browsing contexts.
     }
-  }, [activeSelectedSensorId]);
+  }, [activeSelectedPoint]);
 
   const selectCollectionPoint = useCallback((sensorId) => {
     // Clear the old point synchronously so its values cannot be painted under the new label.
     setLeituraAtual(null);
     setHistorico([]);
     setSensorStats([]);
+    setFullHistory([]);
+    setFullHistoryStats([]);
     setIsCurrentLoading(true);
     setIsHistoryLoading(true);
     setSelectedSensorId(sensorId);
@@ -132,7 +140,11 @@ export const useSensorData = () => {
       if (error.name === 'AbortError') return;
       if (DEMO_FALLBACK_ENABLED) {
         setIsDemo(true);
-        setAvailableCollectionPoints([{ sensorId: DEMO_SENSOR_ID, gatewayId: 'demo', dataHora: null }]);
+        setAvailableCollectionPoints(getAvailableCollectionPoints([{
+          sensor_id: DEMO_SENSOR_ID,
+          gateway_id: 'demo',
+          data_hora: null,
+        }]));
       } else {
         setPointsError(error.name === 'ApiTimeoutError'
           ? 'Tempo limite excedido ao consultar os pontos de coleta.'
@@ -186,9 +198,62 @@ export const useSensorData = () => {
   }, [loadCollectionPoints, loadStatus]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const requestId = fullHistoryRequestId.current + 1;
+    fullHistoryRequestId.current = requestId;
+
+    if (!activeSelectedPoint) {
+      setFullHistory([]);
+      setFullHistoryStats([]);
+      setIsFullHistoryLoading(false);
+      setFullHistoryError(null);
+      return () => controller.abort();
+    }
+
+    const loadFullHistory = async () => {
+      setFullHistory([]);
+      setFullHistoryStats([]);
+      setFullHistoryError(null);
+      setIsFullHistoryLoading(true);
+
+      try {
+        const payload = await fetchJsonWithTimeout(buildApiUrl(API_BASE, '/api/medicoes', {
+          inicio: FULL_HISTORY_START,
+          fim: toLocalApiDate(new Date()),
+          sensor_id: activeSelectedPoint.sensorId,
+          gateway_id: activeSelectedPoint.gatewayId,
+        }), { signal: controller.signal });
+        const records = normalizeReadingsResponse(payload, '/api/medicoes');
+        const pointRecords = getRecordsForCollectionPoint(records, activeSelectedPoint);
+        if (records.length !== pointRecords.length) {
+          throw new Error('O historico completo retornou dados de outro ponto de coleta.');
+        }
+        if (fullHistoryRequestId.current !== requestId || controller.signal.aborted) return;
+
+        const sanitizedRecords = pointRecords.map(sanitizeData);
+        setFullHistory(sanitizedRecords);
+        setFullHistoryStats(buildSensorStats(sanitizedRecords, SENSORS));
+      } catch (error) {
+        if (error.name !== 'AbortError' && fullHistoryRequestId.current === requestId) {
+          setFullHistoryError(error.name === 'ApiTimeoutError'
+            ? 'Tempo limite excedido ao consultar a analise historica.'
+            : 'Nao foi possivel carregar a analise historica.');
+        }
+      } finally {
+        if (fullHistoryRequestId.current === requestId && !controller.signal.aborted) {
+          setIsFullHistoryLoading(false);
+        }
+      }
+    };
+
+    loadFullHistory();
+    return () => controller.abort();
+  }, [activeSelectedPoint, leituraAtual?.data_hora]);
+
+  useEffect(() => {
     const activeControllers = new Set();
 
-    if (!activeSelectedSensorId) {
+    if (!activeSelectedPoint) {
       setLeituraAtual(null);
       setHistorico([]);
       setSensorStats([]);
@@ -213,7 +278,7 @@ export const useSensorData = () => {
       setIsCurrentLoading(true);
       setIsHistoryLoading(Boolean(range));
 
-      if (isDemo && DEMO_FALLBACK_ENABLED && activeSelectedSensorId === DEMO_SENSOR_ID) {
+      if (isDemo && DEMO_FALLBACK_ENABLED && activeSelectedPoint.sensorId === DEMO_SENSOR_ID) {
         const current = buildDemoCurrentReading();
         const demoHistory = range ? buildDemoHistoryRange(toLocalApiDate(range.deDate), toLocalApiDate(range.ateDate)) : [];
         if (dataRequestId.current === requestId) {
@@ -228,18 +293,25 @@ export const useSensorData = () => {
       }
 
       const currentPromise = fetchJsonWithTimeout(
-        buildApiUrl(API_BASE, '/api/medicoes/recentes', { sensor_id: activeSelectedSensorId }),
+        buildApiUrl(API_BASE, '/api/medicoes/recentes', {
+          sensor_id: activeSelectedPoint.sensorId,
+          gateway_id: activeSelectedPoint.gatewayId,
+        }),
         { signal: controller.signal, timeoutMs: 5000 },
-      ).then((payload) => getReadingForSensor(normalizeReadingsResponse(payload, '/api/medicoes/recentes'), activeSelectedSensorId));
+      ).then((payload) => getReadingForCollectionPoint(
+        normalizeReadingsResponse(payload, '/api/medicoes/recentes'),
+        activeSelectedPoint,
+      ));
 
       const historyPromise = range
         ? fetchJsonWithTimeout(buildApiUrl(API_BASE, '/api/medicoes', {
           inicio: toLocalApiDate(range.deDate),
           fim: toLocalApiDate(range.ateDate),
-          sensor_id: activeSelectedSensorId,
+          sensor_id: activeSelectedPoint.sensorId,
+          gateway_id: activeSelectedPoint.gatewayId,
         }), { signal: controller.signal }).then((payload) => {
           const records = normalizeReadingsResponse(payload, '/api/medicoes');
-          const filteredRecords = getRecordsForSensor(records, activeSelectedSensorId);
+          const filteredRecords = getRecordsForCollectionPoint(records, activeSelectedPoint);
           if (records.length !== filteredRecords.length) {
             throw new Error('O historico retornou dados de outro ponto de coleta.');
           }
@@ -280,15 +352,19 @@ export const useSensorData = () => {
       activeControllers.forEach((controller) => controller.abort());
       clearInterval(intervalId);
     };
-  }, [activeSelectedSensorId, buildDemoCurrentReading, buildDemoHistoryRange, customRange, isDemo, periodo]);
+  }, [activeSelectedPoint, buildDemoCurrentReading, buildDemoHistoryRange, customRange, isDemo, periodo]);
 
   return {
     leituraAtual,
     historico,
     sensorStats,
+    fullHistory,
+    fullHistoryStats,
+    isFullHistoryLoading,
+    fullHistoryError,
     nodeStatuses,
     availableCollectionPoints,
-    selectedSensorId: activeSelectedSensorId,
+    selectedCollectionPoint: activeSelectedPoint,
     setSelectedSensorId: selectCollectionPoint,
     periodo,
     setPeriodo,

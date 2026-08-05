@@ -1,9 +1,8 @@
 // Retorna true se o valor é uma leitura válida
 export function isValidReading(value) {
-  return value !== null &&
-         value !== undefined &&
-         value !== -127 &&
-         !isNaN(value)
+  return typeof value === 'number' &&
+         Number.isFinite(value) &&
+         value !== -127
 }
 
 // Calcula média ignorando leituras inválidas
