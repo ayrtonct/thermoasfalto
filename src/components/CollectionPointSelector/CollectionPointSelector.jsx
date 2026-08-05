@@ -3,7 +3,7 @@ import { formatRssi, getGatewayDisplay } from '../../utils/collectionPoints';
 import styles from './CollectionPointSelector.module.css';
 
 export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, leituraAtual, isLoading, error }) => {
-  const selectedPoint = points.find((point) => point.sensorId === selectedSensorId);
+  const selectedPoint = points.find((point) => point.pointKey === selectedSensorId);
   const gatewayId = leituraAtual?.gateway_id || selectedPoint?.gatewayId;
 
   return (
@@ -18,8 +18,8 @@ export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, le
           disabled={isLoading || points.length === 0}
         >
           {points.map((point) => (
-            <option key={point.sensorId} value={point.sensorId}>
-              {getCollectionPointName(point.sensorId)}
+            <option key={point.pointKey} value={point.pointKey}>
+              {getCollectionPointName(point.sensorId)} ({getGatewayDisplay(point.gatewayId)})
             </option>
           ))}
         </select>
@@ -27,7 +27,7 @@ export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, le
 
       {selectedSensorId && (
         <div className={styles.details}>
-          <span>Sensor: <strong>{selectedSensorId}</strong></span>
+          <span>Sensor: <strong>{selectedPoint?.sensorId}</strong></span>
           <span>Gateway: <strong>{getGatewayDisplay(gatewayId)}</strong></span>
           <span>RSSI: <strong>{formatRssi(leituraAtual?.rssi)}</strong></span>
         </div>

@@ -1,7 +1,8 @@
 import styles from './Gauge.module.css';
 import { SENSORS, GAUGE_MIN, GAUGE_MAX } from '../../constants/sensors';
+import { isValidReading } from '../../utils/dataHelpers';
 
-export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtual }) => {
+export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtual, channelStatuses }) => {
   // SVG Arc calculation for a semi-circle (180 degrees)
   const radius = 80;
   const strokeWidth = 12;
@@ -18,10 +19,10 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
     return { x, y };
   };
 
-  const safeVal = value !== null ? value : 0;
+  const safeVal = isValidReading(value) ? value : 0;
   const clampedValue = Math.min(Math.max(safeVal, GAUGE_MIN), GAUGE_MAX);
   const percent = (clampedValue - GAUGE_MIN) / (GAUGE_MAX - GAUGE_MIN);
-  const targetPt = getCoordinatesForPercent(value !== null && leituraAtual ? percent : 0);
+  const targetPt = getCoordinatesForPercent(isValidReading(value) && leituraAtual ? percent : 0);
 
   // Define background arc
   const startBg = getCoordinatesForPercent(0);
@@ -32,13 +33,16 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
   const pathActive = `M ${startBg.x} ${startBg.y} A ${radius} ${radius} 0 0 1 ${targetPt.x} ${targetPt.y}`;
 
   let colorVar = 'var(--blue)';
-  if (value === null || !leituraAtual) colorVar = 'var(--border2)';
+  if (!isValidReading(value) || !leituraAtual) colorVar = 'var(--border2)';
   else if (clampedValue >= 35 && clampedValue < 45) colorVar = 'var(--teal)';
   else if (clampedValue >= 45 && clampedValue < 52) colorVar = 'var(--accent)';
   else if (clampedValue >= 52) colorVar = 'var(--red)';
 
   const selectedSensor = SENSORS.find(s => s.id === selectedSensorId);
-  const isSelectedActive = selectedSensor && selectedSensor.active && leituraAtual && leituraAtual[`temp_${selectedSensorId}`] !== null;
+  const isSelectedActive = selectedSensor &&
+    channelStatuses?.[selectedSensorId] !== 'offline' &&
+    leituraAtual &&
+    isValidReading(leituraAtual[`temp_${selectedSensorId}`]);
 
   return (
     <div className={styles.gaugeContainer}>
@@ -75,7 +79,8 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
 
       <div className={styles.sensorGrid}>
         {SENSORS.map((s) => {
-          const isSensorActive = s.active && leituraAtual && leituraAtual[`temp_${s.id}`] !== null;
+          const connectionStatus = channelStatuses?.[s.id] || 'insufficient';
+          const isSensorActive = connectionStatus !== 'offline' && leituraAtual && isValidReading(leituraAtual[`temp_${s.id}`]);
           return (
             <button
               key={s.id}
@@ -87,7 +92,7 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
                 borderColor: selectedSensorId === s.id && isSensorActive ? 'var(--accent)' : 'transparent'
               }}
             >
-              {!isSensorActive && <div className={styles.offlineBadge}>OFFLINE</div>}
+              {!isSensorActive && <div className={styles.offlineBadge}>{connectionStatus === 'offline' ? 'OFFLINE' : 'SEM DADOS'}</div>}
               <div className={styles.btnDot}></div>
               <div className={styles.btnMeta}>
                 <span className={styles.btnLabel}>{s.label}</span>
