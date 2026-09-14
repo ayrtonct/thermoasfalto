@@ -4,10 +4,10 @@ export const AlertStrip = ({ alerts }) => {
   if (!alerts || alerts.length === 0) return null;
 
   return (
-    <div className={styles.alertStrip}>
-      <span className={styles.icon}>⚠️</span>
+    <div className={styles.alertStrip} role="alert">
+      <span className={styles.icon} aria-hidden="true">!</span>
       <div className={styles.message}>
-        <strong>ALERTA DE TEMPERATURA CRÍTICA:</strong> {alerts.map(a => `${a.sensor} atingiu ${a.temp}°C`).join(' | ')}
+        <strong>Temperatura crítica</strong> {alerts.map(a => `${a.sensor} atingiu ${a.temp}°C`).join(' · ')}
       </div>
     </div>
   );

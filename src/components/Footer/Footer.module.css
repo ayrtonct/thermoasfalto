@@ -1,82 +1,79 @@
 .footer {
-  text-align: center;
-  padding: 2.5rem 1.5rem;
-  background-color: var(--bg2);
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem; /* 24px vertical padding requested roughly between blocks */
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+  padding: 1.35rem clamp(1rem, 3vw, 2.5rem);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-inset);
+  color: var(--text-muted);
+  font-size: 0.68rem;
 }
 
-/* Bloco 1 */
 .blockOne {
-  font-family: var(--font-mono);
-  font-size: 0.95rem; /* slightly larger */
-  color: var(--text2);
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  font-weight: 650;
 }
 
-/* Bloco 2 */
 .blockTwo {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  font-family: var(--font-mono);
-  color: var(--text3);
-  font-size: 0.8rem;
+  gap: 0.25rem;
+  text-align: center;
 }
 
 .labs {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  gap: var(--space-2);
 }
 
 .separator {
-  color: var(--border2);
+  color: var(--border-strong);
 }
 
 .instituicao {
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
+  font-size: 0.64rem;
 }
 
-/* Bloco 3 */
 .blockThree {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 3rem;
-  font-family: var(--font-mono);
-  color: var(--text3);
-  font-size: 0.8rem;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  text-align: right;
 }
 
 .teamMember {
-  display: flex;
-  gap: 0.4rem;
+  display: inline;
 }
 
 .label {
-  color: var(--accent);
-  font-weight: 700;
+  color: var(--text-secondary);
+  font-weight: 650;
 }
 
-/* Mobile Responsiveness (< 600px) */
-@media (max-width: 600px) {
-  .labs {
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-  
-  .separator {
-    display: none;
+@media (max-width: 900px) {
+  .footer {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    text-align: center;
   }
 
   .blockThree {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .labs {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.15rem;
+  }
+
+  .separator {
+    display: none;
   }
 }

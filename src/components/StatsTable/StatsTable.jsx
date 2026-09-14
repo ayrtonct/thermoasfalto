@@ -1,7 +1,7 @@
 import styles from './StatsTable.module.css';
 import { SENSORS } from '../../constants/sensors';
 
-export const StatsTable = ({ stats, channelStatuses, isLoading, error }) => {
+export const StatsTable = ({ stats, channelStatuses, isLoading, hasLoaded, error, onRetry }) => {
   const statsBySensor = new Map((stats || []).map((item) => [item.sensor_id, item]));
   const rows = SENSORS.map((sensor) => {
     const sensorStats = statsBySensor.get(sensor.id);
@@ -21,19 +21,27 @@ export const StatsTable = ({ stats, channelStatuses, isLoading, error }) => {
     };
   });
 
-  if (isLoading) return <div className={styles.container}>Carregando analise historica...</div>;
-  if (error) return <div className={styles.container}>{error}</div>;
-  if (!stats || stats.length === 0) return <div className={styles.container}>Sem historico disponivel para este ponto.</div>;
+  const hasStats = Boolean(stats?.length);
+
+  if ((!hasLoaded || isLoading) && !hasStats) return <div className={styles.container} role="status">Carregando análise histórica...</div>;
+  if (error && !hasStats) return <div className={styles.container} role="alert"><span>{error}</span><button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button></div>;
+  if (hasLoaded && !hasStats) return <div className={styles.container}>Sem dados para o período selecionado.</div>;
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3 className={styles.title}>Analise Historica</h3>
-        <span className={styles.scope}>Historico completo do ponto</span>
+        <div>
+          <span className={styles.eyebrow}>Resumo estatístico</span>
+          <h3 className={styles.title}>Análise histórica</h3>
+        </div>
+        <span className={styles.scope}>Período selecionado</span>
       </div>
+
+      {error && <div className={styles.refreshWarning} role="alert"><span>{error} As estatísticas anteriores foram preservadas.</span><button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button></div>}
 
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
+          <caption className={styles.srOnly}>Estatísticas de temperatura por sensor</caption>
           <thead>
             <tr>
               <th>Sensor</th>
@@ -50,19 +58,19 @@ export const StatsTable = ({ stats, channelStatuses, isLoading, error }) => {
               const isUnavailable = isOffline || sensor.noData;
               return (
                 <tr key={sensor.id} className={isUnavailable ? styles.offlineRow : ''}>
-                  <td>
+                  <td data-label="Sensor">
                     <div className={styles.sensorCell}>
                       <span className={styles.dot} style={{ backgroundColor: sensor.color }}></span>
                       <span className={styles.label}>{sensor.label}</span>
-                      {isOffline && <span className={styles.offlineBadge}>DESCONECTADO</span>}
-                      {sensor.connectionStatus === 'insufficient' && <span className={styles.offlineBadge}>SEM DADOS</span>}
+                      {isOffline && <span className={`${styles.statusBadge} ${styles.disconnected}`}>Offline</span>}
+                      {sensor.connectionStatus === 'insufficient' && <span className={styles.statusBadge}>Sem dados</span>}
                     </div>
                   </td>
-                  <td className={styles.depth}>{sensor.depth}</td>
-                  <td className={styles.numCol}>{isUnavailable ? '--' : `${sensor.avg.toFixed(1)}°`}</td>
-                  <td className={`${styles.numCol} ${!isUnavailable ? styles.high : ''}`}>{isUnavailable ? '--' : `${sensor.max.toFixed(1)}°`}</td>
-                  <td className={`${styles.numCol} ${!isUnavailable ? styles.low : ''}`}>{isUnavailable ? '--' : `${sensor.min.toFixed(1)}°`}</td>
-                  <td className={styles.numCol}>{isUnavailable ? '--' : `${sensor.amp.toFixed(1)}°`}</td>
+                  <td data-label="Profundidade" className={styles.depth}>{sensor.depth}</td>
+                  <td data-label="Média" className={styles.numCol}>{isUnavailable ? '--' : `${sensor.avg.toFixed(1)}°`}</td>
+                  <td data-label="Máxima" className={`${styles.numCol} ${!isUnavailable ? styles.high : ''}`}>{isUnavailable ? '--' : `${sensor.max.toFixed(1)}°`}</td>
+                  <td data-label="Mínima" className={`${styles.numCol} ${!isUnavailable ? styles.low : ''}`}>{isUnavailable ? '--' : `${sensor.min.toFixed(1)}°`}</td>
+                  <td data-label="Amplitude" className={styles.numCol}>{isUnavailable ? '--' : `${sensor.amp.toFixed(1)}°`}</td>
                 </tr>
               );
             })}
