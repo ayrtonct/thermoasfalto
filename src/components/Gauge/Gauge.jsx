@@ -45,9 +45,16 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
     isValidReading(leituraAtual[`temp_${selectedSensorId}`]);
 
   return (
-    <div className={styles.gaugeContainer}>
+    <section className={styles.gaugeContainer} aria-label="Leitura atual por sensor">
+      <div className={styles.header}>
+        <div>
+          <span className={styles.eyebrow}>Leitura atual</span>
+          <h3 className={styles.title}>Sensores térmicos</h3>
+        </div>
+        <span className={styles.sensorCount}>DS1–DS6</span>
+      </div>
       <div className={styles.gaugeViz}>
-        <svg viewBox="0 0 200 120" className={styles.svg}>
+        <svg viewBox="0 0 200 120" className={styles.svg} aria-hidden="true">
           <path
             d={pathBg}
             fill="none"
@@ -84,24 +91,26 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
           return (
             <button
               key={s.id}
+              type="button"
               disabled={!isSensorActive}
+              aria-pressed={selectedSensorId === s.id && isSensorActive}
+              aria-label={`${s.label}, profundidade ${s.depth}, ${isSensorActive ? 'disponível' : connectionStatus === 'offline' ? 'offline' : 'sem dados'}`}
               className={`${styles.sensorBtn} ${selectedSensorId === s.id && isSensorActive ? styles.active : ''} ${!isSensorActive ? styles.offline : ''}`}
               onClick={() => onSelectSensor(s.id)}
               style={{
-                '--s-color': s.color,
-                borderColor: selectedSensorId === s.id && isSensorActive ? 'var(--accent)' : 'transparent'
+                '--s-color': s.color
               }}
             >
-              {!isSensorActive && <div className={styles.offlineBadge}>{connectionStatus === 'offline' ? 'OFFLINE' : 'SEM DADOS'}</div>}
               <div className={styles.btnDot}></div>
               <div className={styles.btnMeta}>
                 <span className={styles.btnLabel}>{s.label}</span>
                 <span className={styles.btnDepth}>{s.depth}</span>
               </div>
+              {!isSensorActive && <span className={`${styles.offlineBadge} ${connectionStatus === 'offline' ? styles.disconnected : ''}`}>{connectionStatus === 'offline' ? 'Offline' : 'Sem dados'}</span>}
             </button>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };

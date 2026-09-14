@@ -1,14 +1,17 @@
 import styles from './KpiCards.module.css';
 import { safeAvg, isValidReading } from '../../utils/dataHelpers';
+import { getLoadPhase } from '../../utils/loadState';
 
 const KpiCard = ({ title, value, unit, previousValue }) => {
   const delta = previousValue !== null && value !== null ? value - previousValue : 0;
-  
+
   return (
-    <div className={styles.card}>
+    <article className={styles.card}>
       <h3 className={styles.title}>{title}</h3>
       <div className={styles.valueGroup}>
-        <span className={styles.value}>{value !== null ? value.toFixed(1) : '--'}</span>
+        <span className={`${styles.value} ${value === null ? styles.unavailable : ''}`}>
+          {value !== null ? value.toFixed(1) : '--'}
+        </span>
         <span className={styles.unit}>{unit}</span>
       </div>
       {previousValue !== null && (
@@ -16,15 +19,38 @@ const KpiCard = ({ title, value, unit, previousValue }) => {
           {delta > 0 ? '▲' : delta < 0 ? '▼' : '▬'} {Math.abs(delta).toFixed(1)}
         </div>
       )}
-    </div>
+    </article>
   );
 };
 
-export const KpiCards = ({ leituraAtual, historico }) => {
-  // If no data yet
-  if (!leituraAtual) return <div className={styles.container}>Carregando KPIs...</div>;
+export const KpiCards = ({ leituraAtual, historico, isLoading, hasLoaded, error, onRetry }) => {
+  const phase = getLoadPhase(
+    { data: leituraAtual, isLoading, hasLoaded, error },
+    Boolean(leituraAtual)
+  );
 
-  // The history is already filtered by collection point in the data hook.
+  if (phase === 'loading' || phase === 'idle') {
+    return <div className={styles.loading} role="status">Carregando indicadores...</div>;
+  }
+
+  if (phase === 'error') {
+    return (
+      <div className={styles.loading} role="alert">
+        <span>{error}</span>
+        <button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button>
+      </div>
+    );
+  }
+
+  if (phase === 'empty') {
+    return (
+      <div className={styles.loading} role="status">
+        <span>Sem leitura atual para este ponto.</span>
+        <button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button>
+      </div>
+    );
+  }
+
   const prevLeitura = [...(historico || [])]
     .filter((reading) => reading.data_hora !== leituraAtual.data_hora)
     .sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())[0] || null;
@@ -39,31 +65,31 @@ export const KpiCards = ({ leituraAtual, historico }) => {
   const prevBase = prevLeitura ? safeAvg(prevLeitura.temp_ds1, prevLeitura.temp_ds2) : null;
   const prevGradient = prevSurf !== null && prevBase !== null ? prevSurf - prevBase : null;
 
-  // Calculate global min/max over historico
-  let maxPeriod = null;
-  let minPeriod = null;
+  const allTemps = (historico || []).flatMap((reading) => [
+    reading.temp_ds1,
+    reading.temp_ds2,
+    reading.temp_ds3,
+    reading.temp_ds4,
+    reading.temp_ds5,
+    reading.temp_ds6,
+  ]).filter(isValidReading);
+  const maxPeriod = allTemps.length > 0 ? Math.max(...allTemps) : null;
+  const minPeriod = allTemps.length > 0 ? Math.min(...allTemps) : null;
 
-  if (historico && historico.length > 0) {
-    let allTemps = [];
-    historico.forEach(l => {
-      [l.temp_ds1, l.temp_ds2, l.temp_ds3, l.temp_ds4, l.temp_ds5, l.temp_ds6].forEach(val => {
-        if (isValidReading(val)) allTemps.push(val);
-      });
-    });
-    if (allTemps.length > 0) {
-      maxPeriod = Math.max(...allTemps);
-      minPeriod = Math.min(...allTemps);
-    }
-  }
-
-  return (
-    <div className={styles.container}>
+  return (<>
+    {error && (
+      <div className={styles.refreshWarning} role="alert">
+        <span>{error} Os últimos indicadores foram preservados.</span>
+        <button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button>
+      </div>
+    )}
+    <section className={styles.container} aria-label="Indicadores térmicos principais">
       <KpiCard title="Superfície Atual" value={currentSurf} unit="°C" previousValue={prevSurf} />
       <KpiCard title="Revestimento Atual" value={currentMed} unit="°C" previousValue={prevMed} />
       <KpiCard title="Base Atual" value={currentBase} unit="°C" previousValue={prevBase} />
       <KpiCard title="Gradiente (Sup - Base)" value={gradient} unit="°C" previousValue={prevGradient} />
       <KpiCard title="Máxima no Período" value={maxPeriod} unit="°C" previousValue={null} />
       <KpiCard title="Mínima no Período" value={minPeriod} unit="°C" previousValue={null} />
-    </div>
-  );
+    </section>
+  </>);
 };

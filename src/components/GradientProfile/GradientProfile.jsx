@@ -54,10 +54,13 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>Perfil de Gradiente</h3>
+      <div className={styles.header}>
+        <span className={styles.eyebrow}>Estrutura do pavimento</span>
+        <h3 className={styles.title}>Perfil térmico</h3>
+      </div>
 
       <div className={styles.section}>
-        <h4 className={styles.subtitle}>Temperatura Atual</h4>
+        <h4 className={styles.subtitle}>Temperatura atual</h4>
         <div className={styles.bars}>
           
           <div className={styles.barItem} style={{ opacity: currentSurf === null ? 0.5 : 1 }}>
@@ -68,10 +71,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
             {currentSurf !== null ? (
               <>
                 <div className={styles.track}>
-                  <div 
-                    className={styles.fill} 
-                    style={{ width: getWidth(currentSurf), backgroundColor: 'var(--accent)' }}
-                  ></div>
+                  <div className={styles.fill} style={{ '--bar-width': getWidth(currentSurf), '--bar-color': 'var(--accent)' }}></div>
                 </div>
                 <div className={styles.value}>{currentSurf.toFixed(1)}°</div>
               </>
@@ -88,10 +88,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
             {currentMed !== null ? (
               <>
                 <div className={styles.track}>
-                  <div 
-                    className={styles.fill} 
-                    style={{ width: getWidth(currentMed), backgroundColor: 'var(--blue)' }}
-                  ></div>
+                  <div className={styles.fill} style={{ '--bar-width': getWidth(currentMed), '--bar-color': 'var(--blue)' }}></div>
                 </div>
                 <div className={styles.value}>{currentMed.toFixed(1)}°</div>
               </>
@@ -108,10 +105,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
             {currentBase !== null ? (
               <>
                 <div className={styles.track}>
-                  <div 
-                    className={styles.fill} 
-                    style={{ width: getWidth(currentBase), backgroundColor: 'var(--red)' }}
-                  ></div>
+                  <div className={styles.fill} style={{ '--bar-width': getWidth(currentBase), '--bar-color': 'var(--red)' }}></div>
                 </div>
                 <div className={styles.value}>{currentBase.toFixed(1)}°</div>
               </>
@@ -126,7 +120,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
       <div className={styles.divider}></div>
 
       <div className={styles.section}>
-        <h4 className={styles.subtitle}>Amplitude (Período)</h4>
+        <h4 className={styles.subtitle}>Amplitude no período</h4>
         <div className={styles.bars}>
           
           <div className={styles.barItem} style={{ opacity: amplitudes.surf === null ? 0.5 : 1 }}>
@@ -136,10 +130,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
             {amplitudes.surf !== null ? (
               <>
                 <div className={styles.trackAmp}>
-                  <div 
-                    className={styles.fillAmp} 
-                    style={{ width: getAmpWidth(amplitudes.surf), backgroundColor: 'var(--accent)' }}
-                  ></div>
+                  <div className={styles.fillAmp} style={{ '--bar-width': getAmpWidth(amplitudes.surf), '--bar-color': 'var(--accent)' }}></div>
                 </div>
                 <div className={styles.value}>Δ {amplitudes.surf.toFixed(1)}°</div>
               </>
@@ -155,10 +146,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
             {amplitudes.med !== null ? (
               <>
                 <div className={styles.trackAmp}>
-                  <div 
-                    className={styles.fillAmp} 
-                    style={{ width: getAmpWidth(amplitudes.med), backgroundColor: 'var(--blue)' }}
-                  ></div>
+                  <div className={styles.fillAmp} style={{ '--bar-width': getAmpWidth(amplitudes.med), '--bar-color': 'var(--blue)' }}></div>
                 </div>
                 <div className={styles.value}>Δ {amplitudes.med.toFixed(1)}°</div>
               </>
@@ -174,10 +162,7 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
             {amplitudes.base !== null ? (
               <>
                 <div className={styles.trackAmp}>
-                  <div 
-                    className={styles.fillAmp} 
-                    style={{ width: getAmpWidth(amplitudes.base), backgroundColor: 'var(--red)' }}
-                  ></div>
+                  <div className={styles.fillAmp} style={{ '--bar-width': getAmpWidth(amplitudes.base), '--bar-color': 'var(--red)' }}></div>
                 </div>
                 <div className={styles.value}>Δ {amplitudes.base.toFixed(1)}°</div>
               </>

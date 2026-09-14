@@ -12,6 +12,16 @@ import { Line } from 'react-chartjs-2';
 import styles from './HistoryChart.module.css';
 import { SENSORS } from '../../constants/sensors';
 import { exportHistoryToCsv } from '../../utils/exportHelpers';
+import { getLoadPhase } from '../../utils/loadState';
+
+const CHART_THEME = {
+  tooltipBackground: '#161e2b',
+  tooltipText: '#f3f6fa',
+  tooltipBorder: '#35445a',
+  grid: 'rgba(156, 169, 186, 0.10)',
+  tick: '#8d9aac',
+  monoFont: 'SFMono-Regular, Consolas, Liberation Mono, monospace',
+};
 
 const formatTimeLabel = (value, includeDate = false) => {
   const date = new Date(value);
@@ -42,7 +52,9 @@ export const HistoryChart = ({
   customRange,
   setCustomRange,
   isLoading,
+  hasLoaded,
   error,
+  onRetry,
   collectionPointName,
   collectionPointId,
 }) => {
@@ -130,13 +142,13 @@ export const HistoryChart = ({
         display: false,
       },
       tooltip: {
-        backgroundColor: '#181b22',
-        titleColor: '#e8ecf5',
-        bodyColor: '#e8ecf5',
-        borderColor: '#2a2f3e',
+        backgroundColor: CHART_THEME.tooltipBackground,
+        titleColor: CHART_THEME.tooltipText,
+        bodyColor: CHART_THEME.tooltipText,
+        borderColor: CHART_THEME.tooltipBorder,
         borderWidth: 1,
-        titleFont: { family: 'Space Mono' },
-        bodyFont: { family: 'Space Mono' },
+        titleFont: { family: CHART_THEME.monoFont },
+        bodyFont: { family: CHART_THEME.monoFont },
         padding: 12,
         boxPadding: 6,
         usePointStyle: true,
@@ -163,12 +175,12 @@ export const HistoryChart = ({
         min: chartData.minX ?? undefined,
         max: chartData.maxX ?? undefined,
         grid: {
-          color: '#1f2330',
+          color: CHART_THEME.grid,
           drawBorder: false,
         },
         ticks: {
-          color: '#8b92a8',
-          font: { family: 'Space Mono', size: 10 },
+          color: CHART_THEME.tick,
+          font: { family: CHART_THEME.monoFont, size: 10 },
           maxTicksLimit: 8,
           maxRotation: 0,
           callback: (value) => formatTimeLabel(Number(value), chartData.hasMultiDayRange),
@@ -178,12 +190,12 @@ export const HistoryChart = ({
         min: 20,
         max: 65,
         grid: {
-          color: '#1f2330',
+          color: CHART_THEME.grid,
           drawBorder: false,
         },
         ticks: {
-          color: '#8b92a8',
-          font: { family: 'Space Mono', size: 11 },
+          color: CHART_THEME.tick,
+          font: { family: CHART_THEME.monoFont, size: 11 },
           callback: (value) => `${value}°C`,
         },
       },
@@ -191,18 +203,27 @@ export const HistoryChart = ({
   };
 
   const periods = ['30M', '1H', '3H', '6H', '12H', '24H'];
+  const loadPhase = getLoadPhase(
+    { data: historico, isLoading, hasLoaded, error },
+    chartData.datasets.length > 0
+  );
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        {collectionPointName && <span className={styles.pointName}>{collectionPointName}</span>}
-        <h3 className={styles.title}>Histórico Térmico</h3>
+        <div className={styles.titleGroup}>
+          <span className={styles.eyebrow}>Série temporal</span>
+          <h3 className={styles.title}>Histórico térmico</h3>
+          {collectionPointName && <span className={styles.pointName}>{collectionPointName}</span>}
+        </div>
         <div className={styles.controls}>
           <div className={styles.topControls}>
             <div className={styles.periodGroup}>
               {periods.map((p) => (
                 <button
                   key={p}
+                  type="button"
+                  aria-pressed={periodo === p}
                   className={`${styles.periodBtn} ${periodo === p ? styles.active : ''}`}
                   onClick={() => setPeriodo(p)}
                 >
@@ -210,6 +231,8 @@ export const HistoryChart = ({
                 </button>
               ))}
               <button
+                type="button"
+                aria-pressed={periodo === 'LIVRE'}
                 className={`${styles.periodBtn} ${periodo === 'LIVRE' ? styles.active : ''}`}
                 onClick={() => setPeriodo('LIVRE')}
               >
@@ -218,6 +241,7 @@ export const HistoryChart = ({
             </div>
 
             <button
+              type="button"
               className={styles.exportBtn}
               onClick={handleExport}
               disabled={!historico || historico.length === 0}
@@ -228,21 +252,27 @@ export const HistoryChart = ({
           </div>
 
           {periodo === 'LIVRE' && (
-            <div className={styles.customRange}>
-              <input
-                type="datetime-local"
-                className={styles.dateInput}
-                value={localRange.de}
-                onChange={(e) => setLocalRange((prev) => ({ ...prev, de: e.target.value }))}
-              />
+            <div className={styles.customRange} aria-label="Período personalizado">
+              <label className={styles.dateField}>
+                <span>Início</span>
+                <input
+                  type="datetime-local"
+                  className={styles.dateInput}
+                  value={localRange.de}
+                  onChange={(e) => setLocalRange((prev) => ({ ...prev, de: e.target.value }))}
+                />
+              </label>
               <span className={styles.rangeSep}>ate</span>
-              <input
-                type="datetime-local"
-                className={styles.dateInput}
-                value={localRange.ate}
-                onChange={(e) => setLocalRange((prev) => ({ ...prev, ate: e.target.value }))}
-              />
-              <button className={styles.applyBtn} onClick={handleApplyCustom}>
+              <label className={styles.dateField}>
+                <span>Fim</span>
+                <input
+                  type="datetime-local"
+                  className={styles.dateInput}
+                  value={localRange.ate}
+                  onChange={(e) => setLocalRange((prev) => ({ ...prev, ate: e.target.value }))}
+                />
+              </label>
+              <button type="button" className={styles.applyBtn} onClick={handleApplyCustom}>
                 Aplicar
               </button>
             </div>
@@ -250,11 +280,21 @@ export const HistoryChart = ({
         </div>
       </div>
 
+      {error && loadPhase === 'data' && (
+        <div className={styles.refreshWarning} role="alert">
+          <span>{error} O histórico exibido foi preservado.</span>
+          <button type="button" className={styles.retryBtn} onClick={onRetry}>Tentar novamente</button>
+        </div>
+      )}
+
       <div className={styles.chartWrapper}>
-        {isLoading ? <div className={styles.emptyMessage}>Carregando historico...</div>
-          : error ? <div className={styles.errorMessage}>{error}</div>
-            : chartData.datasets.length === 0 ? <div className={styles.emptyMessage}>Ainda nao existem medicoes para este ponto.</div>
-              : <Line data={chartData} options={chartOptions} />}
+        {loadPhase === 'loading' || loadPhase === 'idle'
+          ? <div className={styles.emptyMessage}>Carregando histórico...</div>
+          : loadPhase === 'error'
+            ? <div className={styles.errorMessage} role="alert"><span>{error}</span><button type="button" className={styles.retryBtn} onClick={onRetry}>Tentar novamente</button></div>
+            : loadPhase === 'empty'
+              ? <div className={styles.emptyMessage}>Sem dados para o período selecionado.</div>
+              : <Line data={chartData} options={chartOptions} role="img" aria-label="Gráfico do histórico térmico dos sensores" />}
       </div>
 
       <div className={styles.legend}>
@@ -262,8 +302,10 @@ export const HistoryChart = ({
           const isHidden = hiddenDatasets[sensor.id];
 
           return (
-            <div
+            <button
+              type="button"
               key={sensor.id}
+              aria-pressed={!isHidden}
               className={`${styles.legendItem} ${isHidden ? styles.hidden : ''}`}
               onClick={() => toggleDataset(sensor.id)}
             >
@@ -274,7 +316,7 @@ export const HistoryChart = ({
               <span className={styles.legendLabel}>
                 {sensor.label} ({sensor.depth})
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
