@@ -1,8 +1,8 @@
 import styles from './Gauge.module.css';
-import { SENSORS, GAUGE_MIN, GAUGE_MAX } from '../../constants/sensors';
-import { isValidReading } from '../../utils/dataHelpers';
+import { GAUGE_MIN, GAUGE_MAX } from '../../constants/sensors';
+import { isExcludedFromAnalytics, isValidReading } from '../../utils/dataHelpers';
 
-export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtual, channelStatuses }) => {
+export const Gauge = ({ value = 0, sensors, nodeId, selectedSensorId, onSelectSensor, leituraAtual, channelStatuses }) => {
   // SVG Arc calculation for a semi-circle (180 degrees)
   const radius = 80;
   const strokeWidth = 12;
@@ -38,7 +38,7 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
   else if (clampedValue >= 45 && clampedValue < 52) colorVar = 'var(--accent)';
   else if (clampedValue >= 52) colorVar = 'var(--red)';
 
-  const selectedSensor = SENSORS.find(s => s.id === selectedSensorId);
+  const selectedSensor = sensors.find(s => s.id === selectedSensorId);
   const isSelectedActive = selectedSensor &&
     channelStatuses?.[selectedSensorId] !== 'offline' &&
     leituraAtual &&
@@ -81,11 +81,14 @@ export const Gauge = ({ value = 0, selectedSensorId, onSelectSensor, leituraAtua
           <div className={styles.gaugeDepth}>
             {selectedSensor ? selectedSensor.depth : ''}
           </div>
+          {isSelectedActive && isExcludedFromAnalytics(value, nodeId) && (
+            <div className={styles.analyticalNote}>Excluída dos cálculos</div>
+          )}
         </div>
       </div>
 
       <div className={styles.sensorGrid}>
-        {SENSORS.map((s) => {
+        {sensors.map((s) => {
           const connectionStatus = channelStatuses?.[s.id] || 'insufficient';
           const isSensorActive = connectionStatus !== 'offline' && leituraAtual && isValidReading(leituraAtual[`temp_${s.id}`]);
           return (

@@ -1,56 +1,25 @@
 import { useMemo } from 'react';
 import styles from './GradientProfile.module.css';
-import { GAUGE_MIN, GAUGE_MAX } from '../../constants/sensors';
-import { safeAvg } from '../../utils/dataHelpers';
+import { GAUGE_MIN, GAUGE_MAX, getDepthGroups } from '../../constants/sensors';
+import { getDepthTemperature } from '../../utils/dataHelpers';
 
-export const GradientProfile = ({ leituraAtual, historico }) => {
-  // Calculando valores atuais
-  const currentSurf = leituraAtual ? safeAvg(leituraAtual.temp_ds5, leituraAtual.temp_ds6) : null;
-  const currentMed = leituraAtual ? safeAvg(leituraAtual.temp_ds3, leituraAtual.temp_ds4) : null;
-  const currentBase = leituraAtual ? safeAvg(leituraAtual.temp_ds1, leituraAtual.temp_ds2) : null;
+export const GradientProfile = ({ leituraAtual, historico, profile }) => {
+  const groups = useMemo(() => getDepthGroups(profile), [profile]);
+  const currentValues = groups.map((group) => getDepthTemperature(leituraAtual, group, profile.technicalId));
 
-  // Calculando amplitude no histórico
   const amplitudes = useMemo(() => {
-    if (!historico || historico.length === 0) return { surf: null, med: null, base: null, maxAmp: 1 };
-
-    let sMax = -Infinity, sMin = Infinity;
-    let mMax = -Infinity, mMin = Infinity;
-    let bMax = -Infinity, bMin = Infinity;
-    let hasS = false, hasM = false, hasB = false;
-
-    historico.forEach(d => {
-      const s = safeAvg(d.temp_ds5, d.temp_ds6);
-      const m = safeAvg(d.temp_ds3, d.temp_ds4);
-      const b = safeAvg(d.temp_ds1, d.temp_ds2);
-
-      if (s !== null) { hasS = true; if (s > sMax) sMax = s; if (s < sMin) sMin = s; }
-      if (m !== null) { hasM = true; if (m > mMax) mMax = m; if (m < mMin) mMin = m; }
-      if (b !== null) { hasB = true; if (b > bMax) bMax = b; if (b < bMin) bMin = b; }
+    const values = groups.map((group) => {
+      const temperatures = (historico || [])
+        .map((reading) => getDepthTemperature(reading, group, profile.technicalId))
+        .filter((value) => value !== null);
+      return temperatures.length ? Math.max(...temperatures) - Math.min(...temperatures) : null;
     });
+    const valid = values.filter((value) => value !== null);
+    return { values, max: valid.length ? Math.max(...valid, 1) : 1 };
+  }, [groups, historico, profile.technicalId]);
 
-    const sAmp = hasS ? sMax - sMin : null;
-    const mAmp = hasM ? mMax - mMin : null;
-    const bAmp = hasB ? bMax - bMin : null;
-    
-    const amps = [sAmp, mAmp, bAmp].filter(a => a !== null);
-    const maxAmp = amps.length > 0 ? Math.max(...amps, 1) : 1;
-
-    return {
-      surf: sAmp,
-      med: mAmp,
-      base: bAmp,
-      maxAmp
-    };
-  }, [historico]);
-
-  const getWidth = (val) => {
-    const p = Math.max(0, Math.min(100, ((val - GAUGE_MIN) / (GAUGE_MAX - GAUGE_MIN)) * 100));
-    return `${p}%`;
-  };
-
-  const getAmpWidth = (val) => {
-    return `${(val / amplitudes.maxAmp) * 100}%`;
-  };
+  const getWidth = (value) => `${Math.max(0, Math.min(100, ((value - GAUGE_MIN) / (GAUGE_MAX - GAUGE_MIN)) * 100))}%`;
+  const getAmpWidth = (value) => `${(value / amplitudes.max) * 100}%`;
 
   return (
     <div className={styles.container}>
@@ -62,118 +31,43 @@ export const GradientProfile = ({ leituraAtual, historico }) => {
       <div className={styles.section}>
         <h4 className={styles.subtitle}>Temperatura atual</h4>
         <div className={styles.bars}>
-          
-          <div className={styles.barItem} style={{ opacity: currentSurf === null ? 0.5 : 1 }}>
-            <div className={styles.labelGroup}>
-              <span className={styles.depth}>0 cm</span>
-              <span className={styles.layer}>Superfície</span>
-            </div>
-            {currentSurf !== null ? (
-              <>
-                <div className={styles.track}>
-                  <div className={styles.fill} style={{ '--bar-width': getWidth(currentSurf), '--bar-color': 'var(--accent)' }}></div>
+          {groups.map((group, index) => {
+            const value = currentValues[index];
+            return (
+              <div key={group.depthCm} className={styles.barItem} style={{ opacity: value === null ? 0.5 : 1 }}>
+                <div className={styles.labelGroup}>
+                  <span className={styles.depth}>{group.depthCm} cm</span>
+                  <span className={styles.layer}>{group.label}</span>
                 </div>
-                <div className={styles.value}>{currentSurf.toFixed(1)}°</div>
-              </>
-            ) : (
-              <div className={styles.noDataMsg}>Sem leitura</div>
-            )}
-          </div>
-
-          <div className={styles.barItem} style={{ opacity: currentMed === null ? 0.5 : 1 }}>
-            <div className={styles.labelGroup}>
-              <span className={styles.depth}>2 cm</span>
-              <span className={styles.layer}>Revestimento</span>
-            </div>
-            {currentMed !== null ? (
-              <>
-                <div className={styles.track}>
-                  <div className={styles.fill} style={{ '--bar-width': getWidth(currentMed), '--bar-color': 'var(--blue)' }}></div>
-                </div>
-                <div className={styles.value}>{currentMed.toFixed(1)}°</div>
-              </>
-            ) : (
-              <div className={styles.noDataMsg}>Sem leitura</div>
-            )}
-          </div>
-
-          <div className={styles.barItem} style={{ opacity: currentBase === null ? 0.5 : 1 }}>
-            <div className={styles.labelGroup}>
-              <span className={styles.depth}>4 cm</span>
-              <span className={styles.layer}>Base</span>
-            </div>
-            {currentBase !== null ? (
-              <>
-                <div className={styles.track}>
-                  <div className={styles.fill} style={{ '--bar-width': getWidth(currentBase), '--bar-color': 'var(--red)' }}></div>
-                </div>
-                <div className={styles.value}>{currentBase.toFixed(1)}°</div>
-              </>
-            ) : (
-              <div className={styles.noDataMsg}>Sem leitura</div>
-            )}
-          </div>
-
+                {value !== null ? (<>
+                  <div className={styles.track}><div className={styles.fill} style={{ '--bar-width': getWidth(value), '--bar-color': group.color }} /></div>
+                  <div className={styles.value}>{value.toFixed(1)}°</div>
+                </>) : <div className={styles.noDataMsg}>Sem dados válidos</div>}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className={styles.divider}></div>
+      <div className={styles.divider} />
 
       <div className={styles.section}>
         <h4 className={styles.subtitle}>Amplitude no período</h4>
         <div className={styles.bars}>
-          
-          <div className={styles.barItem} style={{ opacity: amplitudes.surf === null ? 0.5 : 1 }}>
-            <div className={styles.labelGroup}>
-              <span className={styles.depth}>Superfície</span>
-            </div>
-            {amplitudes.surf !== null ? (
-              <>
-                <div className={styles.trackAmp}>
-                  <div className={styles.fillAmp} style={{ '--bar-width': getAmpWidth(amplitudes.surf), '--bar-color': 'var(--accent)' }}></div>
-                </div>
-                <div className={styles.value}>Δ {amplitudes.surf.toFixed(1)}°</div>
-              </>
-            ) : (
-              <div className={styles.noDataMsg}>Sem leitura</div>
-            )}
-          </div>
-
-          <div className={styles.barItem} style={{ opacity: amplitudes.med === null ? 0.5 : 1 }}>
-            <div className={styles.labelGroup}>
-              <span className={styles.depth}>Médio</span>
-            </div>
-            {amplitudes.med !== null ? (
-              <>
-                <div className={styles.trackAmp}>
-                  <div className={styles.fillAmp} style={{ '--bar-width': getAmpWidth(amplitudes.med), '--bar-color': 'var(--blue)' }}></div>
-                </div>
-                <div className={styles.value}>Δ {amplitudes.med.toFixed(1)}°</div>
-              </>
-            ) : (
-              <div className={styles.noDataMsg}>Sem leitura</div>
-            )}
-          </div>
-
-          <div className={styles.barItem} style={{ opacity: amplitudes.base === null ? 0.5 : 1 }}>
-            <div className={styles.labelGroup}>
-              <span className={styles.depth}>Base</span>
-            </div>
-            {amplitudes.base !== null ? (
-              <>
-                <div className={styles.trackAmp}>
-                  <div className={styles.fillAmp} style={{ '--bar-width': getAmpWidth(amplitudes.base), '--bar-color': 'var(--red)' }}></div>
-                </div>
-                <div className={styles.value}>Δ {amplitudes.base.toFixed(1)}°</div>
-              </>
-            ) : (
-              <div className={styles.noDataMsg}>Sem leitura</div>
-            )}
-          </div>
-
+          {groups.map((group, index) => {
+            const value = amplitudes.values[index];
+            return (
+              <div key={group.depthCm} className={styles.barItem} style={{ opacity: value === null ? 0.5 : 1 }}>
+                <div className={styles.labelGroup}><span className={styles.depth}>{group.depthCm} cm</span></div>
+                {value !== null ? (<>
+                  <div className={styles.trackAmp}><div className={styles.fillAmp} style={{ '--bar-width': getAmpWidth(value), '--bar-color': group.color }} /></div>
+                  <div className={styles.value}>Δ {value.toFixed(1)}°</div>
+                </>) : <div className={styles.noDataMsg}>Sem dados válidos</div>}
+              </div>
+            );
+          })}
         </div>
       </div>
-
     </div>
   );
 };

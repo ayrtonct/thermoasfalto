@@ -1,12 +1,21 @@
+import { getNodeProfile } from '../constants/sensors.js';
+import { getGatewayName } from '../constants/collectionPoints.js';
+
 export const normalizeSensorId = (sensorId) => {
   if (sensorId === null || sensorId === undefined || sensorId === '') return null;
   return String(sensorId);
 };
 
+export const normalizeGatewayId = (sensorId, gatewayId) => {
+  const profile = getNodeProfile(sensorId);
+  if (profile.gatewayId && (!gatewayId || gatewayId === 'gateway_legacy')) return profile.gatewayId;
+  return gatewayId || 'gateway_unknown';
+};
+
 export const getCollectionPointKey = (sensorId, gatewayId) => {
   const normalizedSensorId = normalizeSensorId(sensorId);
   if (!normalizedSensorId) return null;
-  return `${gatewayId || 'gateway_unknown'}::${normalizedSensorId}`;
+  return `${normalizeGatewayId(normalizedSensorId, gatewayId)}::${normalizedSensorId}`;
 };
 
 export const resolveValidatedSensorId = (availableCollectionPoints, persistedSensorId) => {
@@ -34,7 +43,7 @@ export const getAvailableCollectionPoints = (readings) => {
   readings.forEach((reading) => {
     const sensorId = normalizeSensorId(reading?.sensor_id);
     if (!sensorId) return;
-    const gatewayId = reading.gateway_id || null;
+    const gatewayId = normalizeGatewayId(sensorId, reading.gateway_id);
     const pointKey = getCollectionPointKey(sensorId, gatewayId);
 
     const existing = pointsByKey.get(pointKey);
@@ -98,4 +107,4 @@ export const formatRssi = (rssi) => {
   return typeof rssi === 'number' && Number.isFinite(rssi) ? `${rssi.toFixed(1)} dBm` : 'Indisponivel';
 };
 
-export const getGatewayDisplay = (gatewayId) => gatewayId || 'Gateway nao identificado';
+export const getGatewayDisplay = (gatewayId, sensorId) => getGatewayName(sensorId, normalizeGatewayId(sensorId, gatewayId));

@@ -1,10 +1,9 @@
-// Configure friendly names here while the backend has no collection-point catalog.
-export const COLLECTION_POINT_METADATA = {};
+import { getNodeProfile } from './sensors.js';
 
-export const getCollectionPointMetadata = (sensorId) => {
-  return COLLECTION_POINT_METADATA[String(sensorId)] || {};
-};
+export const getCollectionPointMetadata = (sensorId) => getNodeProfile(sensorId);
+export const getCollectionPointName = (sensorId) => getNodeProfile(sensorId).displayName;
 
-export const getCollectionPointName = (sensorId) => {
-  return getCollectionPointMetadata(sensorId).name || `Sensor ${sensorId}`;
+export const getGatewayName = (sensorId, gatewayId) => {
+  const profile = getNodeProfile(sensorId);
+  return gatewayId === profile.gatewayId ? profile.gatewayName : (gatewayId || profile.gatewayName);
 };

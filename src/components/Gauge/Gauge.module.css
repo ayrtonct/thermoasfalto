@@ -90,6 +90,14 @@
   font-size: 0.67rem;
 }
 
+.analyticalNote {
+  margin-top: 0.35rem;
+  color: var(--yellow);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+
 .sensorGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -25,36 +25,31 @@ function formatTimestamp(value) {
   return date.toLocaleString('pt-BR')
 }
 
-export function exportHistoryToCsv(records, fileLabel = 'historico') {
-  if (!records || records.length === 0) return false
-
+export function buildHistoryCsv(records, sensors = SENSORS) {
   const orderedRecords = [...records].reverse()
+  const orderedSensors = [...sensors].sort((a, b) => a.id.localeCompare(b.id, 'pt-BR', { numeric: true }))
   const headers = [
     'Data/Hora',
-    'DS1 (4 cm)',
-    'DS2 (4 cm)',
-    'DS3 (2 cm)',
-    'DS4 (2 cm)',
-    'DS5 (0 cm)',
-    'DS6 (0 cm)',
+    ...orderedSensors.map((sensor) => `${sensor.label} (${sensor.depth})`),
     'RSSI',
   ]
 
   const rows = orderedRecords.map((record) => [
     formatTimestamp(record.data_hora),
-    record.temp_ds1,
-    record.temp_ds2,
-    record.temp_ds3,
-    record.temp_ds4,
-    record.temp_ds5,
-    record.temp_ds6,
+    ...orderedSensors.map((sensor) => record[`temp_${sensor.id}`]),
     record.rssi,
   ])
 
-  const csvContent = [
+  return [
     headers.map(formatCell).join(CSV_SEPARATOR),
     ...rows.map((row) => row.map(formatCell).join(CSV_SEPARATOR)),
   ].join('\r\n')
+}
+
+export function exportHistoryToCsv(records, fileLabel = 'historico', sensors = SENSORS) {
+  if (!records || records.length === 0) return false
+
+  const csvContent = buildHistoryCsv(records, sensors)
 
   const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -70,3 +65,4 @@ export function exportHistoryToCsv(records, fileLabel = 'historico') {
 
   return true
 }
+import { SENSORS } from '../constants/sensors.js'
