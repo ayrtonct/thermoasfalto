@@ -1,0 +1,3 @@
+export const POINTS_TIMEOUT_MS = 12000;
+export const CURRENT_TIMEOUT_MS = 5000;
+export const HISTORY_TIMEOUT_MS = 15000;

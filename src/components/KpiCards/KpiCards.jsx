@@ -1,5 +1,10 @@
 import styles from './KpiCards.module.css';
-import { safeAvg, isValidReading } from '../../utils/dataHelpers';
+import {
+  getDepthTemperature,
+  getVerticalGradient,
+  isAnalyticallyValidReading,
+} from '../../utils/dataHelpers';
+import { getDepthGroups } from '../../constants/sensors';
 import { getLoadPhase } from '../../utils/loadState';
 
 const KpiCard = ({ title, value, unit, previousValue }) => {
@@ -14,7 +19,7 @@ const KpiCard = ({ title, value, unit, previousValue }) => {
         </span>
         <span className={styles.unit}>{unit}</span>
       </div>
-      {previousValue !== null && (
+      {previousValue !== null && value !== null && (
         <div className={`${styles.delta} ${delta > 0 ? styles.up : delta < 0 ? styles.down : ''}`}>
           {delta > 0 ? '▲' : delta < 0 ? '▼' : '▬'} {Math.abs(delta).toFixed(1)}
         </div>
@@ -22,59 +27,38 @@ const KpiCard = ({ title, value, unit, previousValue }) => {
     </article>
   );
 };
-
-export const KpiCards = ({ leituraAtual, historico, isLoading, hasLoaded, error, onRetry }) => {
+export const KpiCards = ({ leituraAtual, historico, profile, isLoading, hasLoaded, error, onRetry }) => {
   const phase = getLoadPhase(
     { data: leituraAtual, isLoading, hasLoaded, error },
-    Boolean(leituraAtual)
+    Boolean(leituraAtual),
   );
 
   if (phase === 'loading' || phase === 'idle') {
     return <div className={styles.loading} role="status">Carregando indicadores...</div>;
   }
-
   if (phase === 'error') {
-    return (
-      <div className={styles.loading} role="alert">
-        <span>{error}</span>
-        <button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button>
-      </div>
-    );
+    return <div className={styles.loading} role="alert"><span>{error}</span><button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button></div>;
   }
-
   if (phase === 'empty') {
-    return (
-      <div className={styles.loading} role="status">
-        <span>Sem leitura atual para este ponto.</span>
-        <button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button>
-      </div>
-    );
+    return <div className={styles.loading} role="status"><span>Sem leitura atual para este ponto.</span><button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button></div>;
   }
 
+  const groups = getDepthGroups(profile);
   const prevLeitura = [...(historico || [])]
     .filter((reading) => reading.data_hora !== leituraAtual.data_hora)
     .sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())[0] || null;
+  const currentByDepth = groups.map((group) => getDepthTemperature(leituraAtual, group, profile.technicalId));
+  const previousByDepth = groups.map((group) => getDepthTemperature(prevLeitura, group, profile.technicalId));
+  const gradient = getVerticalGradient(leituraAtual, profile);
+  const prevGradient = getVerticalGradient(prevLeitura, profile);
 
-  const currentSurf = safeAvg(leituraAtual.temp_ds5, leituraAtual.temp_ds6);
-  const currentMed = safeAvg(leituraAtual.temp_ds3, leituraAtual.temp_ds4);
-  const currentBase = safeAvg(leituraAtual.temp_ds1, leituraAtual.temp_ds2);
-  const gradient = currentSurf !== null && currentBase !== null ? currentSurf - currentBase : null;
-
-  const prevSurf = prevLeitura ? safeAvg(prevLeitura.temp_ds5, prevLeitura.temp_ds6) : null;
-  const prevMed = prevLeitura ? safeAvg(prevLeitura.temp_ds3, prevLeitura.temp_ds4) : null;
-  const prevBase = prevLeitura ? safeAvg(prevLeitura.temp_ds1, prevLeitura.temp_ds2) : null;
-  const prevGradient = prevSurf !== null && prevBase !== null ? prevSurf - prevBase : null;
-
-  const allTemps = (historico || []).flatMap((reading) => [
-    reading.temp_ds1,
-    reading.temp_ds2,
-    reading.temp_ds3,
-    reading.temp_ds4,
-    reading.temp_ds5,
-    reading.temp_ds6,
-  ]).filter(isValidReading);
-  const maxPeriod = allTemps.length > 0 ? Math.max(...allTemps) : null;
-  const minPeriod = allTemps.length > 0 ? Math.min(...allTemps) : null;
+  const allTemps = (historico || []).flatMap((reading) => profile.channels
+    .map((sensor) => reading[`temp_${sensor.id}`]))
+    .filter((value) => isAnalyticallyValidReading(value, profile.technicalId));
+  const maxPeriod = allTemps.length ? Math.max(...allTemps) : null;
+  const minPeriod = allTemps.length ? Math.min(...allTemps) : null;
+  const shallowDepth = groups[0]?.depthCm;
+  const deepDepth = groups[groups.length - 1]?.depthCm;
 
   return (<>
     {error && (
@@ -84,10 +68,21 @@ export const KpiCards = ({ leituraAtual, historico, isLoading, hasLoaded, error,
       </div>
     )}
     <section className={styles.container} aria-label="Indicadores térmicos principais">
-      <KpiCard title="Superfície Atual" value={currentSurf} unit="°C" previousValue={prevSurf} />
-      <KpiCard title="Revestimento Atual" value={currentMed} unit="°C" previousValue={prevMed} />
-      <KpiCard title="Base Atual" value={currentBase} unit="°C" previousValue={prevBase} />
-      <KpiCard title="Gradiente (Sup - Base)" value={gradient} unit="°C" previousValue={prevGradient} />
+      {groups.map((group, index) => (
+        <KpiCard
+          key={group.depthCm}
+          title={`${group.label} Atual`}
+          value={currentByDepth[index]}
+          unit="°C"
+          previousValue={previousByDepth[index]}
+        />
+      ))}
+      <KpiCard
+        title={`Gradiente ${shallowDepth}–${deepDepth} cm`}
+        value={gradient}
+        unit="°C/cm"
+        previousValue={prevGradient}
+      />
       <KpiCard title="Máxima no Período" value={maxPeriod} unit="°C" previousValue={null} />
       <KpiCard title="Mínima no Período" value={minPeriod} unit="°C" previousValue={null} />
     </section>

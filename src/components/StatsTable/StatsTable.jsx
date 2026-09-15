@@ -1,9 +1,7 @@
 import styles from './StatsTable.module.css';
-import { SENSORS } from '../../constants/sensors';
-
-export const StatsTable = ({ stats, channelStatuses, isLoading, hasLoaded, error, onRetry }) => {
+export const StatsTable = ({ stats, sensors, channelStatuses, isLoading, hasLoaded, error, onRetry }) => {
   const statsBySensor = new Map((stats || []).map((item) => [item.sensor_id, item]));
-  const rows = SENSORS.map((sensor) => {
+  const rows = sensors.map((sensor) => {
     const sensorStats = statsBySensor.get(sensor.id);
     const connectionStatus = channelStatuses?.[sensor.id] || 'insufficient';
 
@@ -64,6 +62,7 @@ export const StatsTable = ({ stats, channelStatuses, isLoading, hasLoaded, error
                       <span className={styles.label}>{sensor.label}</span>
                       {isOffline && <span className={`${styles.statusBadge} ${styles.disconnected}`}>Offline</span>}
                       {sensor.connectionStatus === 'insufficient' && <span className={styles.statusBadge}>Sem dados</span>}
+                      {!isOffline && sensor.noData && sensor.connectionStatus !== 'insufficient' && <span className={styles.statusBadge}>Sem dados válidos</span>}
                     </div>
                   </td>
                   <td data-label="Profundidade" className={styles.depth}>{sensor.depth}</td>

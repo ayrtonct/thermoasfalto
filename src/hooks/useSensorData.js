@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { generateThermalData, generateHistory } from '../utils/thermalModel';
 import { safeValue, buildSensorStats } from '../utils/dataHelpers';
-import { SENSORS } from '../constants/sensors';
+import { getNodeProfile } from '../constants/sensors';
 import {
   buildApiUrl,
   getAvailableCollectionPoints,
@@ -17,13 +17,16 @@ import {
   createLoadState,
   failLoad,
 } from '../utils/loadState';
+import {
+  CURRENT_TIMEOUT_MS,
+  HISTORY_TIMEOUT_MS,
+  POINTS_TIMEOUT_MS,
+} from '../utils/requestPolicy';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 const DEMO_FALLBACK_ENABLED = import.meta.env.VITE_ENABLE_DEMO_FALLBACK === 'true';
 const DEMO_SENSOR_ID = 'demo';
 const REFRESH_INTERVAL_MS = 30000;
-const CURRENT_TIMEOUT_MS = 5000;
-const HISTORY_TIMEOUT_MS = 15000;
 const RECENT_READING_LIMIT = 3;
 const STORAGE_KEY = 'rssf.selectedSensorId';
 
@@ -98,6 +101,7 @@ export const useSensorData = () => {
   const [isDemo, setIsDemo] = useState(false);
   const [isPointsLoading, setIsPointsLoading] = useState(true);
   const [pointsError, setPointsError] = useState(null);
+  const [pointsRetryToken, setPointsRetryToken] = useState(0);
   const [currentRetryToken, setCurrentRetryToken] = useState(0);
   const [historyRetryToken, setHistoryRetryToken] = useState(0);
   const currentRequestTracker = useRef(createLatestRequestTracker());
@@ -113,9 +117,10 @@ export const useSensorData = () => {
   const activePointKey = activeSelectedPoint?.pointKey || null;
   const activeSensorId = activeSelectedPoint?.sensorId || null;
   const activeGatewayId = activeSelectedPoint?.gatewayId || null;
+  const activeNodeProfile = useMemo(() => getNodeProfile(activeSensorId), [activeSensorId]);
   const sensorStats = useMemo(
-    () => buildSensorStats(historyState.data, SENSORS),
-    [historyState.data],
+    () => buildSensorStats(historyState.data, activeNodeProfile.channels, activeSensorId),
+    [activeNodeProfile, activeSensorId, historyState.data],
   );
 
   useEffect(() => {
@@ -143,6 +148,7 @@ export const useSensorData = () => {
 
   const retryCurrent = useCallback(() => setCurrentRetryToken((token) => token + 1), []);
   const retryHistory = useCallback(() => setHistoryRetryToken((token) => token + 1), []);
+  const retryPoints = useCallback(() => setPointsRetryToken((token) => token + 1), []);
 
   const buildDemoCurrentReading = useCallback(() => {
     const now = new Date();
@@ -161,7 +167,7 @@ export const useSensorData = () => {
     try {
       const payload = await fetchJsonWithTimeout(
         buildApiUrl(API_BASE, '/api/medicoes/recentes'),
-        { signal, timeoutMs: CURRENT_TIMEOUT_MS },
+        { signal, timeoutMs: POINTS_TIMEOUT_MS },
       );
       const readings = normalizeReadingsResponse(payload, '/api/medicoes/recentes');
       const nextPoints = getAvailableCollectionPoints(readings);
@@ -239,7 +245,7 @@ export const useSensorData = () => {
       activeControllers.forEach((controller) => controller.abort());
       activeControllers.clear();
     };
-  }, [loadCollectionPoints, loadStatus]);
+  }, [loadCollectionPoints, loadStatus, pointsRetryToken]);
 
   useEffect(() => {
     if (!activePointKey || !activeSensorId) {
@@ -450,6 +456,7 @@ export const useSensorData = () => {
     nodeStatuses,
     availableCollectionPoints,
     selectedCollectionPoint: activeSelectedPoint,
+    activeNodeProfile,
     setSelectedSensorId: selectCollectionPoint,
     periodo,
     setPeriodo,
@@ -465,6 +472,7 @@ export const useSensorData = () => {
     historyError: historyState.error,
     retryCurrent,
     retryHistory,
+    retryPoints,
     hasLoadedPoints: availableCollectionPoints !== null,
     pointsError,
   };

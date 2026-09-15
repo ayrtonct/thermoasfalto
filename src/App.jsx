@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useSensorData } from './hooks/useSensorData';
-import { SENSORS, ALERT_THRESHOLD } from './constants/sensors';
+import { ALERT_THRESHOLD } from './constants/sensors';
 import { getCollectionPointName } from './constants/collectionPoints';
 import { getChannelConnectionStatuses } from './utils/channelStatus';
+import { isAnalyticallyValidReading } from './utils/dataHelpers';
+import { getSystemState } from './utils/dashboardState';
 import { Header } from './components/Header/Header';
 import { AlertStrip } from './components/AlertStrip/AlertStrip';
 import { CollectionPointSelector } from './components/CollectionPointSelector/CollectionPointSelector';
@@ -23,61 +25,64 @@ function App() {
     isCurrentLoading, currentHasLoaded, currentError, retryCurrent,
     isHistoryLoading, historyHasLoaded, historyError, retryHistory,
     hasLoadedPoints, pointsError, selectedCollectionPoint,
+    activeNodeProfile, retryPoints,
     setSelectedSensorId: setSelectedCollectionPointId,
   } = useSensorData();
 
   const activeCollectionPointId = selectedCollectionPoint?.pointKey || null;
+  const sensors = activeNodeProfile.channels;
   const channelStatuses = useMemo(() => getChannelConnectionStatuses(recentReadings), [recentReadings]);
 
   const alerts = useMemo(() => leituraAtual
-    ? SENSORS.filter((sensor) => leituraAtual[`temp_${sensor.id}`] > ALERT_THRESHOLD)
+    ? sensors.filter((sensor) => leituraAtual[`temp_${sensor.id}`] > ALERT_THRESHOLD
+      && isAnalyticallyValidReading(leituraAtual[`temp_${sensor.id}`], activeNodeProfile.technicalId))
       .map((sensor) => ({ sensor: sensor.label, temp: leituraAtual[`temp_${sensor.id}`] }))
-    : [], [leituraAtual]);
+    : [], [activeNodeProfile.technicalId, leituraAtual, sensors]);
 
   const activeSensorId = useMemo(() => {
-    const selected = SENSORS.find((sensor) => sensor.id === selectedSensorId);
+    const selected = sensors.find((sensor) => sensor.id === selectedSensorId);
     if (selected && channelStatuses[selectedSensorId] !== 'offline' && leituraAtual?.[`temp_${selectedSensorId}`] !== null) return selectedSensorId;
-    return SENSORS.find((sensor) => channelStatuses[sensor.id] !== 'offline' && leituraAtual?.[`temp_${sensor.id}`] !== null)?.id || selectedSensorId;
-  }, [channelStatuses, leituraAtual, selectedSensorId]);
-  const hasAmbiguousNodeStatus = selectedCollectionPoint && availableCollectionPoints
-    ?.filter((point) => point.sensorId === selectedCollectionPoint.sensorId).length > 1;
-  const selectedNodeStatus = hasAmbiguousNodeStatus
-    ? undefined
-    : nodeStatuses.find((node) => String(node.sensor_id) === selectedCollectionPoint?.sensorId);
+    return sensors.find((sensor) => channelStatuses[sensor.id] !== 'offline' && leituraAtual?.[`temp_${sensor.id}`] !== null)?.id || selectedSensorId;
+  }, [channelStatuses, leituraAtual, selectedSensorId, sensors]);
+  const selectedNodeStatus = nodeStatuses.find((node) => (
+    String(node.sensor_id) === selectedCollectionPoint?.sensorId
+      && (!node.gateway_id || node.gateway_id === selectedCollectionPoint?.gatewayId)
+  ));
   const selectedSensorValue = leituraAtual ? leituraAtual[`temp_${activeSensorId}`] : null;
   const pointName = selectedCollectionPoint ? getCollectionPointName(selectedCollectionPoint.sensorId) : null;
-  const systemState = currentError
-    ? 'unavailable'
-    : isCurrentLoading && !currentHasLoaded
-      ? 'loading'
-      : leituraAtual
-        ? 'online'
-        : 'empty';
+  const systemState = getSystemState({
+    pointsError,
+    currentError,
+    isPointsLoading,
+    isCurrentLoading,
+    currentHasLoaded,
+    hasReading: Boolean(leituraAtual),
+  });
 
   const renderDashboard = () => {
     if (!hasLoadedPoints) return <div className={styles.emptyState}>{pointsError || 'Carregando pontos de coleta...'}</div>;
     if (availableCollectionPoints?.length === 0) return <div className={styles.emptyState}>Nenhum ponto de coleta encontrado.</div>;
     if (!activeCollectionPointId) return <div className={styles.emptyState}>Carregando dados do ponto selecionado...</div>;
     return <>
-      <KpiCards leituraAtual={leituraAtual} historico={historico} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
+      <KpiCards leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
       <div className={styles.middleRow}>
         <div className={styles.chartWrapper}>
-          <HistoryChart historico={historico} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
+          <HistoryChart historico={historico} sensors={sensors} nodeId={activeNodeProfile.technicalId} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
         </div>
-        <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>
+        <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} sensors={sensors} nodeId={activeNodeProfile.technicalId} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>
       </div>
       <div className={styles.bottomRow}>
-        <div className={styles.bottomCol}><GradientProfile leituraAtual={leituraAtual} historico={historico} /></div>
-        <div className={styles.bottomCol}><StatsTable stats={sensorStats} channelStatuses={channelStatuses} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} /></div>
+        <div className={styles.bottomCol}><GradientProfile leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} /></div>
+        <div className={styles.bottomCol}><StatsTable stats={sensorStats} sensors={sensors} channelStatuses={channelStatuses} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} /></div>
       </div>
     </>;
   };
 
   return <div className={styles.appWrapper}>
-    <Header isDemo={isDemo} systemState={systemState} lastUpdate={leituraAtual?.data_hora || null} nodeStatuses={selectedNodeStatus ? [selectedNodeStatus] : []} />
+    <Header isDemo={isDemo} systemState={systemState} lastUpdate={leituraAtual?.data_hora || null} nodeStatuses={selectedNodeStatus ? [{ ...selectedNodeStatus, display_name: activeNodeProfile.displayName }] : []} />
     <AlertStrip alerts={alerts} />
     <main className={styles.mainContent}>
-      <CollectionPointSelector points={availableCollectionPoints || []} selectedSensorId={activeCollectionPointId} onSelect={setSelectedCollectionPointId} leituraAtual={leituraAtual} isLoading={isPointsLoading && !hasLoadedPoints} error={pointsError} />
+      <CollectionPointSelector points={availableCollectionPoints || []} selectedSensorId={activeCollectionPointId} onSelect={setSelectedCollectionPointId} leituraAtual={leituraAtual} isLoading={isPointsLoading && !hasLoadedPoints} error={pointsError} onRetry={retryPoints} />
       {renderDashboard()}
     </main>
     <Footer />

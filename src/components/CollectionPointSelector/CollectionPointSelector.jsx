@@ -2,7 +2,7 @@ import { getCollectionPointName } from '../../constants/collectionPoints';
 import { formatRssi, getGatewayDisplay } from '../../utils/collectionPoints';
 import styles from './CollectionPointSelector.module.css';
 
-export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, leituraAtual, isLoading, error }) => {
+export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, leituraAtual, isLoading, error, onRetry }) => {
   const selectedPoint = points.find((point) => point.pointKey === selectedSensorId);
   const gatewayId = leituraAtual?.gateway_id || selectedPoint?.gatewayId;
 
@@ -23,7 +23,7 @@ export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, le
         >
           {points.map((point) => (
             <option key={point.pointKey} value={point.pointKey}>
-              {getCollectionPointName(point.sensorId)} ({getGatewayDisplay(point.gatewayId)})
+              {getCollectionPointName(point.sensorId)} ({getGatewayDisplay(point.gatewayId, point.sensorId)})
             </option>
           ))}
         </select>
@@ -31,13 +31,13 @@ export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, le
 
       {selectedSensorId && (
         <dl className={styles.details}>
-          <div><dt>Sensor</dt><dd>{selectedPoint?.sensorId}</dd></div>
-          <div><dt>Gateway</dt><dd>{getGatewayDisplay(gatewayId)}</dd></div>
+          <div><dt>Nó</dt><dd>{getCollectionPointName(selectedPoint?.sensorId)}</dd></div>
+          <div><dt>Gateway</dt><dd>{getGatewayDisplay(gatewayId, selectedPoint?.sensorId)}</dd></div>
           <div><dt>RSSI</dt><dd>{formatRssi(leituraAtual?.rssi)}</dd></div>
         </dl>
       )}
 
-      {error && <p className={styles.error}>{error}</p>}
+      {error && <div className={styles.error} role="alert"><span>{error}</span> <button type="button" onClick={onRetry}>Tentar novamente</button></div>}
     </section>
   );
 };

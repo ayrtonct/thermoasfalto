@@ -10,7 +10,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import styles from './HistoryChart.module.css';
-import { SENSORS } from '../../constants/sensors';
+import { getRawChartMaximum, isExcludedFromAnalytics } from '../../utils/dataHelpers';
 import { exportHistoryToCsv } from '../../utils/exportHelpers';
 import { getLoadPhase } from '../../utils/loadState';
 
@@ -57,6 +57,8 @@ export const HistoryChart = ({
   onRetry,
   collectionPointName,
   collectionPointId,
+  sensors,
+  nodeId,
 }) => {
   const [localRange, setLocalRange] = useState({ de: customRange.de, ate: customRange.ate });
   const [hiddenDatasets, setHiddenDatasets] = useState({});
@@ -83,12 +85,12 @@ export const HistoryChart = ({
   };
 
   const handleExport = () => {
-    exportHistoryToCsv(historico, getExportFileName());
+    exportHistoryToCsv(historico, getExportFileName(), sensors);
   };
 
   const chartData = useMemo(() => {
     if (!historico || historico.length === 0) {
-      return { datasets: [], hasMultiDayRange: false, minX: null, maxX: null };
+      return { datasets: [], hasMultiDayRange: false, minX: null, maxX: null, maxY: null };
     }
 
     const orderedHistory = [...historico]
@@ -96,7 +98,7 @@ export const HistoryChart = ({
       .sort((a, b) => new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime());
 
     if (orderedHistory.length === 0) {
-      return { datasets: [], hasMultiDayRange: false, minX: null, maxX: null };
+      return { datasets: [], hasMultiDayRange: false, minX: null, maxX: null, maxY: null };
     }
 
     const firstTimestamp = new Date(orderedHistory[0].data_hora);
@@ -104,8 +106,9 @@ export const HistoryChart = ({
     const hasMultiDayRange = firstTimestamp.toDateString() !== lastTimestamp.toDateString();
     const minX = firstTimestamp.getTime();
     const maxX = lastTimestamp.getTime();
+    const maxY = getRawChartMaximum(orderedHistory, sensors);
 
-    const datasets = SENSORS.map((sensor) => {
+    const datasets = sensors.map((sensor) => {
       const dataKey = `temp_${sensor.id}`;
 
       return {
@@ -126,8 +129,8 @@ export const HistoryChart = ({
       };
     });
 
-    return { datasets, hasMultiDayRange, minX, maxX };
-  }, [historico, hiddenDatasets]);
+    return { datasets, hasMultiDayRange, minX, maxX, maxY };
+  }, [historico, hiddenDatasets, sensors]);
 
   const chartOptions = {
     responsive: true,
@@ -162,7 +165,10 @@ export const HistoryChart = ({
               return `${item.dataset.label}: --`;
             }
 
-            return `${item.dataset.label}: ${item.parsed.y.toFixed(3)}`;
+            const exclusion = isExcludedFromAnalytics(item.parsed.y, nodeId)
+              ? ' — excluída dos cálculos'
+              : '';
+            return `${item.dataset.label}: ${item.parsed.y.toFixed(3)} °C${exclusion}`;
           },
         },
       },
@@ -188,7 +194,7 @@ export const HistoryChart = ({
       },
       y: {
         min: 20,
-        max: 65,
+        max: chartData.maxY > 65 ? Math.ceil((chartData.maxY + 1) / 5) * 5 : 65,
         grid: {
           color: CHART_THEME.grid,
           drawBorder: false,
@@ -298,7 +304,7 @@ export const HistoryChart = ({
       </div>
 
       <div className={styles.legend}>
-        {SENSORS.map((sensor) => {
+        {sensors.map((sensor) => {
           const isHidden = hiddenDatasets[sensor.id];
 
           return (

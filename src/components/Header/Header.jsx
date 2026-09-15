@@ -21,11 +21,8 @@ export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) =
     <header className={styles.header}>
       <div className={styles.left}>
         <div className={styles.logoGroup}>
-          <span className={styles.brandMark} aria-hidden="true">TA</span>
-          <div>
-            <h1 className={styles.title}>THERMOASFALTO</h1>
-            <p className={styles.description}>Monitoramento térmico de pavimentos</p>
-          </div>
+          <span className={styles.icon}>🌡️</span>
+          <h1 className={styles.title}>THERMOASFALTO</h1>
         </div>
         <p className={styles.subtitle}>UEMA · CCT · Engenharia da Computação · PIBIC 2025/26</p>
       </div>
@@ -34,17 +31,17 @@ export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) =
         {isDemo && (
           <div className={styles.demoBadge}>MODO DEMO</div>
         )}
-        <div className={styles.statusGroup} aria-live="polite">
+        <div className={styles.statusGroup}>
           {nodeStatuses.length > 0 ? (
             <div className={styles.nodesGroup}>
               {nodeStatuses.map(node => (
                 <div 
-                  key={node.sensor_id} 
+                  key={`${node.gateway_id || 'gateway'}::${node.sensor_id}`}
                   className={`${styles.statusPill} ${styles[node.status] || styles.offline}`}
                   title={`Última transmissão: ${node.ultima_transmissao} (${node.minutos_desde_ultima} min atrás)`}
                 >
                   <span className={styles.dot}></span>
-                  NÓ {node.sensor_id}: {LABELS[node.status] || 'OFFLINE'}
+                  {(node.display_name || `Nó sensor ${node.sensor_id}`).toUpperCase()}: {LABELS[node.status] || 'OFFLINE'}
                 </div>
               ))}
             </div>
@@ -54,10 +51,9 @@ export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) =
               {fallbackStatus.label}
             </div>
           )}
-          <time className={styles.timestamp} dateTime={lastUpdate || undefined}>
-            <span>{nodeStatuses.length > 0 ? "Atualização mais recente" : "Última leitura"}</span>
-            {formattedTime}
-          </time>
+          <div className={styles.timestamp}>
+            {nodeStatuses.length > 0 ? "Atualização mais recente:" : "Última leitura:"} {formattedTime}
+          </div>
         </div>
       </div>
     </header>
