@@ -67,7 +67,7 @@ function App() {
     if (!activeCollectionPointId) return <div className={styles.emptyState}>Carregando dados do ponto selecionado...</div>;
     if (activeNodeProfile.mode === 'laboratory') return <LabPanel reading={leituraAtual} history={historico} loading={isHistoryLoading} error={currentError || historyError} retry={() => { retryCurrent(); retryHistory(); }} periodo={periodo} setPeriodo={setPeriodo} status={nodeStatus} />;
     return <>
-      {nodeStatus !== 'online' && <p role="status">Conectividade: {nodeStatus === 'offline' ? 'offline' : nodeStatus === 'instavel' ? 'inst�vel' : 'n�o confirmada'}. Os valores abaixo s�o as �ltimas leituras recebidas.</p>}
+      {nodeStatus !== 'online' && <p role="status">Conectividade: {nodeStatus === 'offline' ? 'offline' : nodeStatus === 'instavel' ? 'instável' : 'não confirmada'}. Os valores abaixo são as últimas leituras recebidas.</p>}
       <KpiCards leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} stats={sensorStats} statsScope={statsScope} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
       <div className={styles.middleRow}>
         <div className={styles.chartWrapper}>
@@ -94,4 +94,3 @@ function App() {
 }
 
 export default App;
-

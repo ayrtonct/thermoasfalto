@@ -111,4 +111,3 @@ export const formatRssi = (rssi) => {
 };
 
 export const getGatewayDisplay = (gatewayId, sensorId) => getGatewayName(sensorId, normalizeGatewayId(sensorId, gatewayId));
-

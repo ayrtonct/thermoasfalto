@@ -19,8 +19,8 @@ const node2 = { sensor_id: 44204, gateway_id: 'gateway_node_2', data_hora: '2026
 test('uses stable names and identities for both nodes', () => {
   const points = getAvailableCollectionPoints([node2, node1]);
   assert.deepEqual(points.map((point) => point.pointKey), ['gateway_node_1::1', 'gateway_node_2::44204']);
-  assert.equal(getCollectionPointName(1), 'N� sensor 1');
-  assert.equal(getCollectionPointName(44204), 'N� sensor 2');
+  assert.equal(getCollectionPointName(1), 'Nó sensor 1');
+  assert.equal(getCollectionPointName(44204), 'Nó sensor 2');
 });
 test('maps legacy rows by old identity plus node and deduplicates the transition', () => {
   const points = getAvailableCollectionPoints([
@@ -70,7 +70,6 @@ test('builds canonical filtered URLs and friendly gateway labels', () => {
   );
   assert.equal(formatRssi(-87.4), '-87.4 dBm');
   assert.equal(formatRssi(null), 'Indisponivel');
-  assert.equal(getGatewayDisplay('gateway_legacy', 1), 'Gateway do n� sensor 1');
-  assert.equal(getGatewayDisplay('gateway_legacy', 44204), 'Gateway do n� sensor 2');
+  assert.equal(getGatewayDisplay('gateway_legacy', 1), 'Gateway do nó sensor 1');
+  assert.equal(getGatewayDisplay('gateway_legacy', 44204), 'Gateway do nó sensor 2');
 });
-
