@@ -89,7 +89,10 @@ export const resolveValidatedCollectionPoint = (availableCollectionPoints, persi
   const exactMatch = availableCollectionPoints.find((point) => point.pointKey === persistedPointKey);
   if (exactMatch) return exactMatch;
 
-  const legacyMatches = availableCollectionPoints.filter((point) => point.sensorId === normalizeSensorId(persistedPointKey));
+  // Gateway identity can be normalized server-side (for example gateway_unknown
+  // becomes gateway_lab_01) while the browser still has the previous point key.
+  const persistedSensorId = normalizeSensorId(String(persistedPointKey).split('::').at(-1));
+  const legacyMatches = availableCollectionPoints.filter((point) => point.sensorId === persistedSensorId);
   return legacyMatches.length === 1 ? legacyMatches[0] : availableCollectionPoints[0] || null;
 };
 

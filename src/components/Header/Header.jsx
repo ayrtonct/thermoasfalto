@@ -7,7 +7,7 @@ const LABELS = {
   unknown: 'STATUS NÃO CONFIRMADO'
 };
 
-export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) => {
+export const Header = ({ isDemo, isLaboratory = false, systemState, lastUpdate, nodeStatuses = [] }) => {
   const formattedTime = lastUpdate 
     ? new Date(lastUpdate).toLocaleString('pt-BR') 
     : '--/--/---- --:--:--';
@@ -34,6 +34,9 @@ export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) =
       <div className={styles.right}>
         {isDemo && (
           <div className={styles.demoBadge}>MODO DEMO</div>
+        )}
+        {isLaboratory && (
+          <div className={styles.labBadge} role="status">AMBIENTE DE TESTE · SEM SENSORES</div>
         )}
         <div className={styles.statusGroup}>
           {nodeStatuses.length > 0 ? (

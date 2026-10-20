@@ -40,6 +40,14 @@ test('validates the persisted selection only after points are available', () => 
   assert.equal(resolveValidatedCollectionPoint(points, 'gateway_node_2::44204').sensorId, '44204');
 });
 
+test('keeps a selected node when its gateway ID is normalized by the backend', () => {
+  const points = getAvailableCollectionPoints([
+    { ...node1, data_hora: '2026-07-10T14:00:00' },
+    { sensor_id: 21768, gateway_id: 'gateway_lab_01', data_hora: '2026-07-10T14:30:00' },
+  ]);
+  assert.equal(resolveValidatedCollectionPoint(points, 'gateway_unknown::21768').pointKey, 'gateway_lab_01::21768');
+});
+
 test('filters records by the complete collection-point identity', () => {
   const records = [{ ...node1, temp_ds1: 28 }, { ...node2, temp_ds1: 31 }];
   assert.equal(getReadingForSensor(records, '44204').gateway_id, 'gateway_node_2');
