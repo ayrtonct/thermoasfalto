@@ -65,9 +65,9 @@ function App() {
     if (!hasLoadedPoints) return <div className={styles.emptyState}>{pointsError || 'Carregando pontos de coleta...'}</div>;
     if (availableCollectionPoints?.length === 0) return <div className={styles.emptyState}>Nenhum ponto de coleta encontrado.</div>;
     if (!activeCollectionPointId) return <div className={styles.emptyState}>Carregando dados do ponto selecionado...</div>;
-    if (activeNodeProfile.mode === 'laboratory') return <LabPanel reading={leituraAtual} history={historico} loading={isHistoryLoading} error={currentError || historyError} retry={() => { retryCurrent(); retryHistory(); }} periodo={periodo} setPeriodo={setPeriodo} />;
+    if (activeNodeProfile.mode === 'laboratory') return <LabPanel reading={leituraAtual} history={historico} loading={isHistoryLoading} error={currentError || historyError} retry={() => { retryCurrent(); retryHistory(); }} periodo={periodo} setPeriodo={setPeriodo} status={nodeStatus} />;
     return <>
-      {nodeStatus !== 'online' && <p role="status">Conectividade: {nodeStatus === 'offline' ? 'offline' : nodeStatus === 'instavel' ? 'instável' : 'não confirmada'}. Os valores abaixo são as últimas leituras recebidas.</p>}
+      {nodeStatus !== 'online' && <p role="status">Conectividade: {nodeStatus === 'offline' ? 'offline' : nodeStatus === 'instavel' ? 'inst�vel' : 'n�o confirmada'}. Os valores abaixo s�o as �ltimas leituras recebidas.</p>}
       <KpiCards leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} stats={sensorStats} statsScope={statsScope} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
       <div className={styles.middleRow}>
         <div className={styles.chartWrapper}>
@@ -83,7 +83,7 @@ function App() {
   };
 
   return <div className={styles.appWrapper}>
-    <Header isDemo={isDemo} systemState={systemState} lastUpdate={leituraAtual?.data_hora || null} nodeStatuses={selectedNodeStatus ? [{ ...selectedNodeStatus, display_name: activeNodeProfile.displayName }] : []} />
+    <Header isDemo={isDemo} isLaboratory={activeNodeProfile.mode === 'laboratory'} systemState={systemState} lastUpdate={leituraAtual?.data_hora || null} nodeStatuses={selectedNodeStatus ? [{ ...selectedNodeStatus, display_name: activeNodeProfile.displayName }] : []} />
     <AlertStrip alerts={alerts} />
     <main className={styles.mainContent}>
       <CollectionPointSelector points={availableCollectionPoints || []} selectedSensorId={activeCollectionPointId} onSelect={setSelectedCollectionPointId} leituraAtual={leituraAtual} isLoading={isPointsLoading && !hasLoadedPoints} error={pointsError} onRetry={retryPoints} />
@@ -94,3 +94,4 @@ function App() {
 }
 
 export default App;
+

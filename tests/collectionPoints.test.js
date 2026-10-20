@@ -19,8 +19,8 @@ const node2 = { sensor_id: 44204, gateway_id: 'gateway_node_2', data_hora: '2026
 test('uses stable names and identities for both nodes', () => {
   const points = getAvailableCollectionPoints([node2, node1]);
   assert.deepEqual(points.map((point) => point.pointKey), ['gateway_node_1::1', 'gateway_node_2::44204']);
-  assert.equal(getCollectionPointName(1), 'Nó sensor 1');
-  assert.equal(getCollectionPointName(44204), 'Nó sensor 2');
+  assert.equal(getCollectionPointName(1), 'N� sensor 1');
+  assert.equal(getCollectionPointName(44204), 'N� sensor 2');
 });
 test('maps legacy rows by old identity plus node and deduplicates the transition', () => {
   const points = getAvailableCollectionPoints([
@@ -38,6 +38,14 @@ test('validates the persisted selection only after points are available', () => 
   assert.equal(resolveValidatedSensorId(points, '44204'), '44204');
   assert.equal(resolveValidatedSensorId(points, '99999'), '1');
   assert.equal(resolveValidatedCollectionPoint(points, 'gateway_node_2::44204').sensorId, '44204');
+});
+
+test('keeps a selected node when its gateway ID is normalized by the backend', () => {
+  const points = getAvailableCollectionPoints([
+    { ...node1, data_hora: '2026-07-10T14:00:00' },
+    { sensor_id: 21768, gateway_id: 'gateway_lab_01', data_hora: '2026-07-10T14:30:00' },
+  ]);
+  assert.equal(resolveValidatedCollectionPoint(points, 'gateway_unknown::21768').pointKey, 'gateway_lab_01::21768');
 });
 
 test('filters records by the complete collection-point identity', () => {
@@ -62,6 +70,7 @@ test('builds canonical filtered URLs and friendly gateway labels', () => {
   );
   assert.equal(formatRssi(-87.4), '-87.4 dBm');
   assert.equal(formatRssi(null), 'Indisponivel');
-  assert.equal(getGatewayDisplay('gateway_legacy', 1), 'Gateway do nó sensor 1');
-  assert.equal(getGatewayDisplay('gateway_legacy', 44204), 'Gateway do nó sensor 2');
+  assert.equal(getGatewayDisplay('gateway_legacy', 1), 'Gateway do n� sensor 1');
+  assert.equal(getGatewayDisplay('gateway_legacy', 44204), 'Gateway do n� sensor 2');
 });
+
