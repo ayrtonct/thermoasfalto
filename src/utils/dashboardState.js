@@ -5,8 +5,9 @@ export const getSystemState = ({
   isCurrentLoading,
   currentHasLoaded,
   hasReading,
+  nodeStatus,
 }) => {
   if (pointsError || currentError) return 'unavailable';
   if (isPointsLoading || (isCurrentLoading && !currentHasLoaded)) return 'loading';
-  return hasReading ? 'online' : 'empty';
+  return hasReading ? (nodeStatus || 'unknown') : 'empty';
 };

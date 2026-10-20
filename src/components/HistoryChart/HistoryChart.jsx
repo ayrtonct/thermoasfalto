@@ -59,6 +59,7 @@ export const HistoryChart = ({
   collectionPointId,
   sensors,
   nodeId,
+  historyMeta,
 }) => {
   const [localRange, setLocalRange] = useState({ de: customRange.de, ate: customRange.ate });
   const [hiddenDatasets, setHiddenDatasets] = useState({});
@@ -208,7 +209,7 @@ export const HistoryChart = ({
     },
   };
 
-  const periods = ['30M', '1H', '3H', '6H', '12H', '24H'];
+  const periods = ['GERAL', '30M', '1H', '3H', '6H', '12H', '24H'];
   const loadPhase = getLoadPhase(
     { data: historico, isLoading, hasLoaded, error },
     chartData.datasets.length > 0
@@ -221,6 +222,7 @@ export const HistoryChart = ({
           <span className={styles.eyebrow}>Série temporal</span>
           <h3 className={styles.title}>Histórico térmico</h3>
           {collectionPointName && <span className={styles.pointName}>{collectionPointName}</span>}
+          {historyMeta?.aggregated && <span className={styles.pointName}>Médias por intervalo de {historyMeta.bucket_seconds} s · {historyMeta.total} amostras. CSV exporta estas médias.</span>}
         </div>
         <div className={styles.controls}>
           <div className={styles.topControls}>
@@ -281,6 +283,9 @@ export const HistoryChart = ({
               <button type="button" className={styles.applyBtn} onClick={handleApplyCustom}>
                 Aplicar
               </button>
+              <button type="button" className={styles.applyBtn} onClick={() => {
+                setLocalRange({ de: '', ate: '' }); setCustomRange({ de: '', ate: '' }); setPeriodo('GERAL');
+              }}>Limpar filtro</button>
             </div>
           )}
         </div>

@@ -2,7 +2,6 @@ import styles from './KpiCards.module.css';
 import {
   getDepthTemperature,
   getVerticalGradient,
-  isAnalyticallyValidReading,
 } from '../../utils/dataHelpers';
 import { getDepthGroups } from '../../constants/sensors';
 import { getLoadPhase } from '../../utils/loadState';
@@ -27,7 +26,7 @@ const KpiCard = ({ title, value, unit, previousValue }) => {
     </article>
   );
 };
-export const KpiCards = ({ leituraAtual, historico, profile, isLoading, hasLoaded, error, onRetry }) => {
+export const KpiCards = ({ leituraAtual, historico, profile, stats = [], statsScope = 'Histórico geral do ponto', isLoading, hasLoaded, error, onRetry }) => {
   const phase = getLoadPhase(
     { data: leituraAtual, isLoading, hasLoaded, error },
     Boolean(leituraAtual),
@@ -45,18 +44,16 @@ export const KpiCards = ({ leituraAtual, historico, profile, isLoading, hasLoade
 
   const groups = getDepthGroups(profile);
   const prevLeitura = [...(historico || [])]
-    .filter((reading) => reading.data_hora !== leituraAtual.data_hora)
+    .filter((reading) => reading.sample_count === 1 && reading.data_hora !== leituraAtual.data_hora)
     .sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())[0] || null;
   const currentByDepth = groups.map((group) => getDepthTemperature(leituraAtual, group, profile.technicalId));
   const previousByDepth = groups.map((group) => getDepthTemperature(prevLeitura, group, profile.technicalId));
   const gradient = getVerticalGradient(leituraAtual, profile);
   const prevGradient = getVerticalGradient(prevLeitura, profile);
 
-  const allTemps = (historico || []).flatMap((reading) => profile.channels
-    .map((sensor) => reading[`temp_${sensor.id}`]))
-    .filter((value) => isAnalyticallyValidReading(value, profile.technicalId));
-  const maxPeriod = allTemps.length ? Math.max(...allTemps) : null;
-  const minPeriod = allTemps.length ? Math.min(...allTemps) : null;
+  const validStats = stats.filter((row) => row.count > 0);
+  const maxPeriod = validStats.length ? Math.max(...validStats.map((row) => row.max)) : null;
+  const minPeriod = validStats.length ? Math.min(...validStats.map((row) => row.min)) : null;
   const shallowDepth = groups[0]?.depthCm;
   const deepDepth = groups[groups.length - 1]?.depthCm;
 
@@ -83,8 +80,8 @@ export const KpiCards = ({ leituraAtual, historico, profile, isLoading, hasLoade
         unit="°C/cm"
         previousValue={prevGradient}
       />
-      <KpiCard title="Máxima no Período" value={maxPeriod} unit="°C" previousValue={null} />
-      <KpiCard title="Mínima no Período" value={minPeriod} unit="°C" previousValue={null} />
+      <KpiCard title={`Máxima — ${statsScope}`} value={maxPeriod} unit="°C" previousValue={null} />
+      <KpiCard title={`Mínima — ${statsScope}`} value={minPeriod} unit="°C" previousValue={null} />
     </section>
   </>);
 };

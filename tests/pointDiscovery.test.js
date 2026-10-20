@@ -26,6 +26,6 @@ test('carregamento, leitura válida e ausência de dados têm estados distintos'
   const base = { pointsError: null, currentError: null, isCurrentLoading: false };
 
   assert.equal(getSystemState({ ...base, isPointsLoading: true, currentHasLoaded: false, hasReading: false }), 'loading');
-  assert.equal(getSystemState({ ...base, isPointsLoading: false, currentHasLoaded: true, hasReading: true }), 'online');
+  assert.equal(getSystemState({ ...base, isPointsLoading: false, currentHasLoaded: true, hasReading: true }), 'unknown');
   assert.equal(getSystemState({ ...base, isPointsLoading: false, currentHasLoaded: true, hasReading: false }), 'empty');
 });

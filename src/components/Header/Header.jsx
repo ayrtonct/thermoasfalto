@@ -3,7 +3,8 @@ import styles from './Header.module.css';
 const LABELS = {
   online: 'ATIVO',
   instavel: 'INSTÁVEL',
-  offline: 'OFFLINE'
+  offline: 'OFFLINE',
+  unknown: 'STATUS NÃO CONFIRMADO'
 };
 
 export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) => {
@@ -15,6 +16,9 @@ export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) =
     loading: { label: 'CARREGANDO', style: 'instavel' },
     unavailable: { label: 'CONSULTA INDISPONÍVEL', style: 'instavel' },
     empty: { label: 'SEM DADOS', style: 'instavel' },
+    unknown: { label: 'STATUS NÃO CONFIRMADO', style: 'instavel' },
+    offline: { label: 'OFFLINE', style: 'offline' },
+    instavel: { label: 'INSTÁVEL', style: 'instavel' },
   }[systemState] || { label: 'SEM DADOS', style: 'instavel' };
 
   return (
@@ -37,8 +41,8 @@ export const Header = ({ isDemo, systemState, lastUpdate, nodeStatuses = [] }) =
               {nodeStatuses.map(node => (
                 <div 
                   key={`${node.gateway_id || 'gateway'}::${node.sensor_id}`}
-                  className={`${styles.statusPill} ${styles[node.status] || styles.offline}`}
-                  title={`Última transmissão: ${node.ultima_transmissao} (${node.minutos_desde_ultima} min atrás)`}
+                  className={`${styles.statusPill} ${styles[node.status] || styles.instavel}`}
+                  title={`Última transmissão: ${new Date(node.ultima_transmissao).toLocaleString('pt-BR')}`}
                 >
                   <span className={styles.dot}></span>
                   {(node.display_name || `Nó sensor ${node.sensor_id}`).toUpperCase()}: {LABELS[node.status] || 'OFFLINE'}

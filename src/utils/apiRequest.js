@@ -17,9 +17,9 @@ export const fetchJsonWithTimeout = async (url, { signal, timeoutMs = 10000 } = 
   }, timeoutMs);
 
   try {
-    const response = await fetch(url, { signal: requestController.signal });
+    const response = await fetch(url, { signal: requestController.signal, cache: 'no-store' });
     if (!response.ok) throw new Error(`Status HTTP ${response.status}`);
-    return response.json();
+    return await response.json();
   } catch (error) {
     if (timedOut && error.name === 'AbortError') throw new ApiTimeoutError();
     throw error;
