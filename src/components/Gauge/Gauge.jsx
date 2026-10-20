@@ -33,14 +33,14 @@ export const Gauge = ({ value = 0, sensors, nodeId, selectedSensorId, onSelectSe
   const pathActive = `M ${startBg.x} ${startBg.y} A ${radius} ${radius} 0 0 1 ${targetPt.x} ${targetPt.y}`;
 
   let colorVar = 'var(--blue)';
-  if (!isValidReading(value) || !leituraAtual) colorVar = 'var(--border2)';
+  if (!isValidReading(value) || !leituraAtual || channelStatuses?.[selectedSensorId] !== 'online') colorVar = 'var(--border2)';
   else if (clampedValue >= 35 && clampedValue < 45) colorVar = 'var(--teal)';
   else if (clampedValue >= 45 && clampedValue < 52) colorVar = 'var(--accent)';
   else if (clampedValue >= 52) colorVar = 'var(--red)';
 
   const selectedSensor = sensors.find(s => s.id === selectedSensorId);
   const isSelectedActive = selectedSensor &&
-    channelStatuses?.[selectedSensorId] !== 'offline' &&
+    channelStatuses?.[selectedSensorId] === 'online' &&
     leituraAtual &&
     isValidReading(leituraAtual[`temp_${selectedSensorId}`]);
 
@@ -90,7 +90,7 @@ export const Gauge = ({ value = 0, sensors, nodeId, selectedSensorId, onSelectSe
       <div className={styles.sensorGrid}>
         {sensors.map((s) => {
           const connectionStatus = channelStatuses?.[s.id] || 'insufficient';
-          const isSensorActive = connectionStatus !== 'offline' && leituraAtual && isValidReading(leituraAtual[`temp_${s.id}`]);
+          const isSensorActive = connectionStatus === 'online' && leituraAtual && isValidReading(leituraAtual[`temp_${s.id}`]);
           return (
             <button
               key={s.id}
@@ -109,7 +109,7 @@ export const Gauge = ({ value = 0, sensors, nodeId, selectedSensorId, onSelectSe
                 <span className={styles.btnLabel}>{s.label}</span>
                 <span className={styles.btnDepth}>{s.depth}</span>
               </div>
-              {!isSensorActive && <span className={`${styles.offlineBadge} ${connectionStatus === 'offline' ? styles.disconnected : ''}`}>{connectionStatus === 'offline' ? 'Offline' : 'Sem dados'}</span>}
+              {!isSensorActive && <span className={`${styles.offlineBadge} ${connectionStatus === 'offline' ? styles.disconnected : ''}`}>{connectionStatus === 'offline' ? 'Offline' : connectionStatus === 'stale' ? 'Desatualizado' : 'Sem dados'}</span>}
             </button>
           );
         })}

@@ -1,5 +1,5 @@
 import styles from './StatsTable.module.css';
-export const StatsTable = ({ stats, sensors, channelStatuses, isLoading, hasLoaded, error, onRetry }) => {
+export const StatsTable = ({ stats, sensors, channelStatuses, isLoading, hasLoaded, error, onRetry, scope = 'Histórico geral do ponto' }) => {
   const statsBySensor = new Map((stats || []).map((item) => [item.sensor_id, item]));
   const rows = sensors.map((sensor) => {
     const sensorStats = statsBySensor.get(sensor.id);
@@ -32,7 +32,7 @@ export const StatsTable = ({ stats, sensors, channelStatuses, isLoading, hasLoad
           <span className={styles.eyebrow}>Resumo estatístico</span>
           <h3 className={styles.title}>Análise histórica</h3>
         </div>
-        <span className={styles.scope}>Período selecionado</span>
+        <span className={styles.scope}>{scope}</span>
       </div>
 
       {error && <div className={styles.refreshWarning} role="alert"><span>{error} As estatísticas anteriores foram preservadas.</span><button type="button" className={styles.retryButton} onClick={onRetry}>Tentar novamente</button></div>}
@@ -53,7 +53,7 @@ export const StatsTable = ({ stats, sensors, channelStatuses, isLoading, hasLoad
           <tbody>
             {rows.map((sensor) => {
               const isOffline = sensor.connectionStatus === 'offline';
-              const isUnavailable = isOffline || sensor.noData;
+              const isUnavailable = sensor.noData;
               return (
                 <tr key={sensor.id} className={isUnavailable ? styles.offlineRow : ''}>
                   <td data-label="Sensor">
@@ -61,6 +61,7 @@ export const StatsTable = ({ stats, sensors, channelStatuses, isLoading, hasLoad
                       <span className={styles.dot} style={{ backgroundColor: sensor.color }}></span>
                       <span className={styles.label}>{sensor.label}</span>
                       {isOffline && <span className={`${styles.statusBadge} ${styles.disconnected}`}>Offline</span>}
+                      {sensor.connectionStatus === 'stale' && <span className={styles.statusBadge}>Status não confirmado</span>}
                       {sensor.connectionStatus === 'insufficient' && <span className={styles.statusBadge}>Sem dados</span>}
                       {!isOffline && sensor.noData && sensor.connectionStatus !== 'insufficient' && <span className={styles.statusBadge}>Sem dados válidos</span>}
                     </div>
