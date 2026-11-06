@@ -305,7 +305,6 @@ export const HistoryChart = ({
         </div>
       </div>
 
-      <p>Horários de São Luís (UTC−03:00).</p>
       {exportError && <div role="alert">{exportError}</div>}
       {error && loadPhase === 'data' && (
         <div className={styles.refreshWarning} role="alert">
