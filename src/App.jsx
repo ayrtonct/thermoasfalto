@@ -65,13 +65,13 @@ function App() {
     if (!hasLoadedPoints) return <div className={styles.emptyState}>{pointsError || 'Carregando pontos de coleta...'}</div>;
     if (availableCollectionPoints?.length === 0) return <div className={styles.emptyState}>Nenhum ponto de coleta encontrado.</div>;
     if (!activeCollectionPointId) return <div className={styles.emptyState}>Carregando dados do ponto selecionado...</div>;
-    if (activeNodeProfile.mode === 'laboratory') return <LabPanel reading={leituraAtual} history={historico} loading={isHistoryLoading} error={currentError || historyError} retry={() => { retryCurrent(); retryHistory(); }} periodo={periodo} setPeriodo={setPeriodo} status={nodeStatus} />;
+    if (activeNodeProfile.mode === 'laboratory') return <LabPanel sensorId={selectedCollectionPoint.sensorId} gatewayId={selectedCollectionPoint.gatewayId} reading={leituraAtual} history={historico} loading={isHistoryLoading} error={currentError || historyError} retry={() => { retryCurrent(); retryHistory(); }} periodo={periodo} setPeriodo={setPeriodo} status={nodeStatus} />;
     return <>
       {nodeStatus !== 'online' && <p role="status">Conectividade: {nodeStatus === 'offline' ? 'offline' : nodeStatus === 'instavel' ? 'instável' : 'não confirmada'}. Os valores abaixo são as últimas leituras recebidas.</p>}
       <KpiCards leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} stats={sensorStats} statsScope={statsScope} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
       <div className={styles.middleRow}>
         <div className={styles.chartWrapper}>
-          <HistoryChart historyMeta={historyMeta} historico={historico} sensors={sensors} nodeId={activeNodeProfile.technicalId} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
+          <HistoryChart historyMeta={historyMeta} historico={historico} sensors={sensors} nodeId={selectedCollectionPoint.sensorId} gatewayId={selectedCollectionPoint.gatewayId} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
         </div>
         <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} sensors={sensors} nodeId={activeNodeProfile.technicalId} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>
       </div>

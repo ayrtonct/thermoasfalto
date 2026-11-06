@@ -1,8 +1,24 @@
+import { useState } from 'react';
+import { downloadRawHistory } from '../utils/exportHelpers';
 import styles from './LabPanel.module.css';
 
-const formatTime = (value) => (value ? new Date(value).toLocaleString('pt-BR') : 'Aguardando primeira transmissão');
+const formatTime = (value) => (value ? new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' }) : 'Aguardando primeira transmissão');
 
-export const LabPanel = ({ reading, history, loading, error, retry, periodo, setPeriodo, status = 'unknown' }) => {
+export const LabPanel = ({ reading, history, loading, error, retry, periodo, setPeriodo, status = 'unknown', sensorId, gatewayId }) => {
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const exportHistory = async () => {
+    setExporting(true);
+    setExportError('');
+    try {
+      await downloadRawHistory({ baseUrl: import.meta.env.VITE_API_BASE_URL || '',
+        sensorId, gatewayId, period: periodo, filename: `laboratorio_${gatewayId}_${sensorId}_${periodo}` });
+    } catch (error) {
+      setExportError(error.message);
+    } finally {
+      setExporting(false);
+    }
+  };
   const statusLabels = { online: 'Conectado', instavel: 'Aguardando próxima janela', offline: 'Sem contato recente', unknown: 'Status não confirmado' };
   return (
     <section className={styles.panel} aria-label="Ambiente de teste de bateria">
@@ -46,13 +62,17 @@ export const LabPanel = ({ reading, history, loading, error, retry, periodo, set
           </select>
         </label>
       </div>
+      <button type="button" onClick={exportHistory} disabled={exporting || !sensorId || !gatewayId}>
+        {exporting ? 'Exportando...' : 'Exportar amostras CSV'}
+      </button>
+      {exportError && <p role="alert">{exportError}</p>}
       {loading && !history.length && <p className={styles.message} role="status">Carregando atividade...</p>}
       {error && <p className={styles.error} role="alert">{error} <button type="button" onClick={retry}>Tentar novamente</button></p>}
-      {!loading && !error && history.length === 0 && <p className={styles.message}>Nenhuma transmissão no período selecionado.</p>}
+      {!loading && !error && history.length === 0 && <p className={styles.message}>Nenhuma amostra no período selecionado.</p>}
       {history.length > 0 && (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
-            <thead><tr><th>Horário do pacote</th><th>Sinal (dBm)</th><th>Amostras agrupadas</th></tr></thead>
+            <thead><tr><th>Horário estimado da amostra (São Luís)</th><th>Sinal (dBm)</th><th>Amostras agrupadas</th></tr></thead>
             <tbody>{[...history].reverse().map((row) => (
               <tr key={row.id}>
                 <td>{formatTime(row.data_hora)}</td>

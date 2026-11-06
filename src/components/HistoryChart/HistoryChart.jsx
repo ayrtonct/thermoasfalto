@@ -11,7 +11,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import styles from './HistoryChart.module.css';
 import { getRawChartMaximum, isExcludedFromAnalytics } from '../../utils/dataHelpers';
-import { exportHistoryToCsv } from '../../utils/exportHelpers';
+import { downloadRawHistory } from '../../utils/exportHelpers';
 import { getLoadPhase } from '../../utils/loadState';
 
 const CHART_THEME = {
@@ -31,8 +31,8 @@ const formatTimeLabel = (value, includeDate = false) => {
   return date.toLocaleString(
     'pt-BR',
     includeDate
-      ? { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }
-      : { hour: '2-digit', minute: '2-digit' }
+      ? { timeZone: 'America/Fortaleza', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }
+      : { timeZone: 'America/Fortaleza', hour: '2-digit', minute: '2-digit' }
   );
 };
 
@@ -60,9 +60,12 @@ export const HistoryChart = ({
   sensors,
   nodeId,
   historyMeta,
+  gatewayId,
 }) => {
   const [localRange, setLocalRange] = useState({ de: customRange.de, ate: customRange.ate });
   const [hiddenDatasets, setHiddenDatasets] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   const getExportFileName = () => {
     if (periodo === 'LIVRE' && customRange.de && customRange.ate) {
@@ -85,8 +88,19 @@ export const HistoryChart = ({
     setCustomRange(localRange);
   };
 
-  const handleExport = () => {
-    exportHistoryToCsv(historico, getExportFileName(), sensors);
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError('');
+    try {
+      await downloadRawHistory({
+        baseUrl: import.meta.env.VITE_API_BASE_URL || '', sensorId: nodeId, gatewayId,
+        period: periodo, custom: customRange, filename: getExportFileName(),
+      });
+    } catch (err) {
+      setExportError(err.message || 'Não foi possível exportar as medições.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const chartData = useMemo(() => {
@@ -222,7 +236,7 @@ export const HistoryChart = ({
           <span className={styles.eyebrow}>Série temporal</span>
           <h3 className={styles.title}>Histórico térmico</h3>
           {collectionPointName && <span className={styles.pointName}>{collectionPointName}</span>}
-          {historyMeta?.aggregated && <span className={styles.pointName}>Médias por intervalo de {historyMeta.bucket_seconds} s · {historyMeta.total} amostras. CSV exporta estas médias.</span>}
+          {historyMeta?.aggregated && <span className={styles.pointName}>Gráfico: médias por intervalo de {historyMeta.bucket_seconds} s · {historyMeta.total} amostras. CSV: leituras individuais.</span>}
         </div>
         <div className={styles.controls}>
           <div className={styles.topControls}>
@@ -252,10 +266,10 @@ export const HistoryChart = ({
               type="button"
               className={styles.exportBtn}
               onClick={handleExport}
-              disabled={!historico || historico.length === 0}
+              disabled={!historico || historico.length === 0 || exporting}
               title="Baixar histórico atual em CSV compatível com Excel"
             >
-              Exportar CSV
+              {exporting ? 'Exportando...' : 'Exportar CSV'}
             </button>
           </div>
 
@@ -291,6 +305,8 @@ export const HistoryChart = ({
         </div>
       </div>
 
+      <p>Horários de São Luís (UTC−03:00).</p>
+      {exportError && <div role="alert">{exportError}</div>}
       {error && loadPhase === 'data' && (
         <div className={styles.refreshWarning} role="alert">
           <span>{error} O histórico exibido foi preservado.</span>

@@ -8,8 +8,8 @@ const LABELS = {
 };
 
 export const Header = ({ isDemo, isLaboratory = false, systemState, lastUpdate, nodeStatuses = [] }) => {
-  const formattedTime = lastUpdate 
-    ? new Date(lastUpdate).toLocaleString('pt-BR') 
+  const formattedTime = lastUpdate
+    ? new Date(lastUpdate).toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' })
     : '--/--/---- --:--:--';
   const fallbackStatus = {
     online: { label: 'SISTEMA ATIVO', style: 'online' },
@@ -42,10 +42,10 @@ export const Header = ({ isDemo, isLaboratory = false, systemState, lastUpdate, 
           {nodeStatuses.length > 0 ? (
             <div className={styles.nodesGroup}>
               {nodeStatuses.map(node => (
-                <div 
+                <div
                   key={`${node.gateway_id || 'gateway'}::${node.sensor_id}`}
                   className={`${styles.statusPill} ${styles[node.status] || styles.instavel}`}
-                  title={`Última transmissão: ${new Date(node.ultima_transmissao).toLocaleString('pt-BR')}`}
+                  title={`Última transmissão: ${new Date(node.ultima_transmissao).toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' })}`}
                 >
                   <span className={styles.dot}></span>
                   {(node.display_name || `Nó sensor ${node.sensor_id}`).toUpperCase()}: {LABELS[node.status] || 'OFFLINE'}

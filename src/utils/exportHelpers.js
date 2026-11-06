@@ -1,3 +1,5 @@
+import { buildApiUrl } from './collectionPoints.js'
+import { historyParams } from './historyScope.js'
 const CSV_SEPARATOR = ';'
 
 function formatCell(value) {
@@ -22,7 +24,7 @@ function formatTimestamp(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
 
-  return date.toLocaleString('pt-BR')
+  return date.toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' })
 }
 
 export function buildHistoryCsv(records, sensors = SENSORS) {
@@ -66,3 +68,33 @@ export function exportHistoryToCsv(records, fileLabel = 'historico', sensors = S
   return true
 }
 import { SENSORS } from '../constants/sensors.js'
+
+
+// Always request individual stored readings, never the chart's aggregated series.
+export async function downloadRawHistory({ baseUrl = '', sensorId, gatewayId, period, custom = {}, filename }) {
+  const url = buildApiUrl(baseUrl, '/api/medicoes/csv', {
+    sensor_id: sensorId, gateway_id: gatewayId, ...historyParams(period, custom),
+  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 120000)
+  let objectUrl
+  let link
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    if (!response.ok) throw new Error('Não foi possível exportar as medições.')
+    const blob = await response.blob()
+    objectUrl = URL.createObjectURL(blob)
+    link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `${filename.replace(/[^\w-]+/g, '_')}.csv`
+    document.body.appendChild(link)
+    link.click()
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('Tempo limite da exportação excedido. Tente um intervalo menor.')
+    throw error
+  } finally {
+    clearTimeout(timer)
+    link?.remove()
+    if (objectUrl) URL.revokeObjectURL(objectUrl)
+  }
+}
