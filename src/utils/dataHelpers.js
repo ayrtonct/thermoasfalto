@@ -5,7 +5,9 @@ export function isValidReading(value) {
 }
 export function isAnalyticallyValidReading(value, sensorId) {
   if (!isValidReading(value)) return false;
-  return !getNodeProfile(sensorId).analyticalInvalidValues.includes(value);
+  const profile = getNodeProfile(sensorId);
+  if (profile.technicalId === '1' && value < 20) return false;
+  return !profile.analyticalInvalidValues.includes(value);
 }
 
 export function isExcludedFromAnalytics(value, sensorId) {
