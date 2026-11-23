@@ -56,8 +56,8 @@ const sanitize = (reading) => Object.fromEntries(Object.entries(reading).map(([k
 
 export const useSensorData = () => {
   const [selectedId, setSelectedId] = useState(savedPoint);
-  const [periodo, setPeriodo] = useState('GERAL');
-  const [customRange, setCustomRange] = useState({ de: '', ate: '' });
+  const [selectedPeriod, setPeriodo] = useState('AUTO');
+  const [manualRange, setCustomRange] = useState({ de: '', ate: '' });
   const [clock, setClock] = useState(() => performance.now());
   useEffect(() => {
     const tick = setInterval(() => setClock(performance.now()), 1000);
@@ -84,7 +84,7 @@ export const useSensorData = () => {
   }));
   const select = useCallback((id) => {
     setSelectedId(id);
-    setPeriodo('GERAL');
+    setPeriodo('AUTO');
     setCustomRange({ de: '', ate: '' });
     try { localStorage.setItem(STORAGE_KEY, id); } catch { /* storage optional */ }
   }, []);
@@ -92,10 +92,15 @@ export const useSensorData = () => {
   const sensorId = point?.sensorId;
   const gatewayId = point?.gatewayId;
   const loadFeatured = useCallback((signal) => fetchJsonWithTimeout(
-    buildApiUrl(API_BASE, '/api/medicoes/cenarios', { sensor_id: sensorId, gateway_id: gatewayId }),
+    buildApiUrl(API_BASE, '/api/medicoes/cenarios', { janela: 'continua', sensor_id: sensorId, gateway_id: gatewayId }),
     { signal, timeoutMs: HISTORY_TIMEOUT_MS },
   ), [sensorId, gatewayId]);
   const featured = useResource(laboratory ? null : pointKey, loadFeatured);
+  const recommended = featured.data?.[0];
+  const autoRange = selectedPeriod === 'AUTO' && !laboratory && recommended?.de && recommended?.ate;
+  const customRange = autoRange ? recommended : manualRange;
+  const periodo = selectedPeriod === 'AUTO' ? (autoRange ? 'CENARIO' : 'GERAL') : selectedPeriod;
+  const waitingForPeriods = selectedPeriod === 'AUTO' && !laboratory && !featured.data && !featured.error;
   const revision = current ? `${current.id}|${current.data_hora}` : '';
   const scope = useMemo(() => {
     try { return { params: historyParams(periodo, customRange), error: null }; }
@@ -118,7 +123,7 @@ export const useSensorData = () => {
       avg: row.avg === null ? null : Number(row.avg), max: row.max === null ? null : Number(row.max),
       min: row.min === null ? null : Number(row.min) }));
   }, [sensorId, gatewayId, periodo, customRange]);
-  const queryKey = pointKey && !scope.error ? `${pointKey}|${periodo}|${customRange.de}|${customRange.ate}|${revision}` : null;
+  const queryKey = pointKey && !scope.error && !waitingForPeriods ? `${pointKey}|${periodo}|${customRange.de}|${customRange.ate}|${revision}` : null;
   const history = useResource(queryKey, loadHistory, 300000);
   const stats = useResource(queryKey, loadStats, 300000);
   const retryChart = history.retry, retryStats = stats.retry;

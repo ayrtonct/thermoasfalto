@@ -135,6 +135,9 @@ export const HistoryChart = ({
           y: record[dataKey],
         })),
         borderColor: sensor.color,
+        segment: periodo === 'CENARIO' ? {
+          borderDash: ({ p0, p1 }) => p1.parsed.x - p0.parsed.x > 2 * 3600000 ? [4, 5] : undefined,
+        } : undefined,
         backgroundColor: sensor.color,
         borderWidth: 2,
         pointRadius: 0,
@@ -147,7 +150,7 @@ export const HistoryChart = ({
     });
 
     return { datasets, hasMultiDayRange, minX, maxX, maxY };
-  }, [historico, hiddenDatasets, sensors]);
+  }, [historico, hiddenDatasets, sensors, periodo]);
 
   const chartOptions = {
     responsive: true,
@@ -307,24 +310,24 @@ export const HistoryChart = ({
         </div>
       </div>
 
-      <section className={styles.featured} aria-label="Dias com mais leituras">
-        <strong>Dias com mais leituras</strong>
+      <section className={styles.featured} aria-label="Períodos de coleta contínua">
+        <strong>Períodos de coleta contínua</strong>
         <div className={styles.days}>
-          {featured.data?.map(({ day, count }) => (
-            <button key={day} type="button" className={styles.day}
-              aria-pressed={periodo === 'CENARIO' && customRange.de.startsWith(day)}
+          {featured.data?.filter(item => item.de && item.ate).map(({ de, ate, count }) => (
+            <button key={de} type="button" className={styles.day}
+              aria-pressed={periodo === 'CENARIO' && customRange.de === de}
               onClick={() => {
-                setCustomRange({ de: day + 'T00:00:00', ate: day + 'T23:59:59' });
+                setCustomRange({ de, ate });
                 setPeriodo('CENARIO');
               }}>
-              {day.split('-').reverse().join('/')} · {count} leituras
+              {de.slice(0, 10).split('-').reverse().join('/')} a {ate.slice(0, 10).split('-').reverse().join('/')} · {count} leituras
             </button>
           ))}
           {featured.error && <button type="button" className={styles.exportBtn} onClick={featured.retry}>
-            Tentar carregar os dias novamente
+            Tentar carregar os períodos novamente
           </button>}
-          {!featured.data && !featured.error && <span>Buscando dias…</span>}
-          {featured.data?.length === 0 && <span>Nenhum dia com duas leituras válidas em horários distintos.</span>}
+          {!featured.data && !featured.error && <span>Buscando períodos…</span>}
+          {featured.data?.length === 0 && <span>Ainda não há dois dias de coleta com cobertura suficiente. Consulte o histórico completo.</span>}
         </div>
       </section>
 
