@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getNodeProfile } from '../constants/sensors';
+import { getDashboardProfile } from '../constants/sensors';
 import { safeValue } from '../utils/dataHelpers';
 import { buildApiUrl, getAvailableCollectionPoints, getRecordsForCollectionPoint,
   resolveValidatedCollectionPoint } from '../utils/collectionPoints';
@@ -76,7 +76,7 @@ export const useSensorData = () => {
     return reading ? sanitize(reading) : null;
   }, [dashboard.data, point]);
   const laboratory = current?.profile?.mode === 'laboratory';
-  const profile = useMemo(() => ({ ...getNodeProfile(point?.sensorId), ...current?.profile,
+  const profile = useMemo(() => ({ ...getDashboardProfile(point?.sensorId), ...current?.profile,
     ...(laboratory ? { displayName: 'Laboratório — teste de bateria', channels: [] } : {}),
   }), [point?.sensorId, current?.profile, laboratory]);
   const nodeStatuses = (dashboard.data?.statuses || []).map((node) => ({ ...node,

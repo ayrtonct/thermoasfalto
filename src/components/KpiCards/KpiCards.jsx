@@ -51,7 +51,7 @@ export const KpiCards = ({ leituraAtual, historico, profile, stats = [], statsSc
   const gradient = getVerticalGradient(leituraAtual, profile);
   const prevGradient = getVerticalGradient(prevLeitura, profile);
 
-  const validStats = stats.filter((row) => row.count > 0);
+  const validStats = stats.filter((row) => row.count > 0 && profile.channels.some(({ id }) => id === row.sensor_id));
   const maxPeriod = validStats.length ? Math.max(...validStats.map((row) => row.max)) : null;
   const minPeriod = validStats.length ? Math.min(...validStats.map((row) => row.min)) : null;
   const shallowDepth = groups[0]?.depthCm;

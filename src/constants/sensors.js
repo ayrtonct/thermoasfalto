@@ -66,6 +66,12 @@ export const getNodeProfile = (sensorId) => {
     : profile;
 };
 
+export const getDashboardProfile = (sensorId) => {
+  const profile = getNodeProfile(sensorId);
+  if (profile.technicalId !== '1') return profile;
+  return { ...profile, channels: profile.channels.filter(({ id }) => id !== 'ds5' && id !== 'ds6') };
+};
+
 export const getDepthGroups = (profile) => {
   const groups = new Map();
   profile.channels.forEach((sensor) => {

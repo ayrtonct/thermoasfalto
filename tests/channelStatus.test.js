@@ -110,3 +110,10 @@ test('raw export keeps 85 and uses the selected node depths', () => {
   assert.match(csv, /85,00/);
   assert.equal(getRawChartMaximum([{ temp_ds1: 85 }], [{ id: 'ds1' }]), 85);
 });
+
+test('dashboard shows only DS1–DS4 on node 1 and all six channels on node 2', async () => {
+  const { getDashboardProfile } = await import('../src/constants/sensors.js');
+  const ids = (node) => getDashboardProfile(node).channels.map(({ id }) => id).sort();
+  assert.deepEqual(ids(1), ['ds1', 'ds2', 'ds3', 'ds4']);
+  assert.deepEqual(ids(44204), ['ds1', 'ds2', 'ds3', 'ds4', 'ds5', 'ds6']);
+});
