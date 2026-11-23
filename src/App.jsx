@@ -73,7 +73,7 @@ function App() {
         <div className={styles.chartWrapper}>
           <HistoryChart key={activeCollectionPointId} featured={featured} nodeStatus={nodeStatus} historyMeta={historyMeta} historico={historico} sensors={sensors} nodeId={selectedCollectionPoint.sensorId} gatewayId={selectedCollectionPoint.gatewayId} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
         </div>
-        <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} sensors={sensors} nodeId={activeNodeProfile.technicalId} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>
+        {nodeStatus !== 'offline' && <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} sensors={sensors} nodeId={activeNodeProfile.technicalId} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>}
       </div>
       <div className={styles.bottomRow}>
         <div className={styles.bottomCol}><GradientProfile leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} /></div>
