@@ -26,7 +26,7 @@ const KpiCard = ({ title, value, unit, previousValue }) => {
     </article>
   );
 };
-export const KpiCards = ({ leituraAtual, historico, profile, stats = [], statsScope = 'Histórico geral do ponto', isLoading, hasLoaded, error, onRetry }) => {
+export const KpiCards = ({ showCurrent, leituraAtual, historico, profile, stats = [], statsScope = 'Histórico geral do ponto', isLoading, hasLoaded, error, onRetry }) => {
   const phase = getLoadPhase(
     { data: leituraAtual, isLoading, hasLoaded, error },
     Boolean(leituraAtual),
@@ -65,7 +65,7 @@ export const KpiCards = ({ leituraAtual, historico, profile, stats = [], statsSc
       </div>
     )}
     <section className={styles.container} aria-label="Indicadores térmicos principais">
-      {groups.map((group, index) => (
+      {showCurrent && groups.map((group, index) => (
         <KpiCard
           key={group.depthCm}
           title={`${group.label} Atual`}
@@ -74,12 +74,12 @@ export const KpiCards = ({ leituraAtual, historico, profile, stats = [], statsSc
           previousValue={previousByDepth[index]}
         />
       ))}
-      <KpiCard
+      {showCurrent && gradient !== null && <KpiCard
         title={`Gradiente ${shallowDepth}–${deepDepth} cm`}
         value={gradient}
         unit="°C/cm"
         previousValue={prevGradient}
-      />
+      />}
       <KpiCard title={`Máxima — ${statsScope}`} value={maxPeriod} unit="°C" previousValue={null} />
       <KpiCard title={`Mínima — ${statsScope}`} value={minPeriod} unit="°C" previousValue={null} />
     </section>

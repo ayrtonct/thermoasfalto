@@ -37,6 +37,7 @@ function App() {
       && node.gateway_id === selectedCollectionPoint?.gatewayId
   ));
   const nodeStatus = selectedNodeStatus?.status || 'unknown';
+  const showCurrent = nodeStatus === 'online';
   const channelStatuses = useMemo(() => getChannelConnectionStatuses(recentReadings, nodeStatus), [recentReadings, nodeStatus]);
 
   const alerts = useMemo(() => leituraAtual && nodeStatus === 'online'
@@ -68,15 +69,15 @@ function App() {
     if (activeNodeProfile.mode === 'laboratory') return <LabPanel sensorId={selectedCollectionPoint.sensorId} gatewayId={selectedCollectionPoint.gatewayId} reading={leituraAtual} history={historico} loading={isHistoryLoading} error={currentError || historyError} retry={() => { retryCurrent(); retryHistory(); }} periodo={periodo} setPeriodo={setPeriodo} status={nodeStatus} />;
     return <>
       {nodeStatus !== 'online' && <p role="status">Conectividade: {nodeStatus === 'offline' ? 'offline' : nodeStatus === 'instavel' ? 'instável' : 'não confirmada'}. Os valores abaixo são as últimas leituras recebidas.</p>}
-      <KpiCards leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} stats={sensorStats} statsScope={statsScope} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
+      <KpiCards showCurrent={showCurrent} leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} stats={sensorStats} statsScope={statsScope} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
       <div className={styles.middleRow}>
         <div className={styles.chartWrapper}>
           <HistoryChart key={activeCollectionPointId} featured={featured} nodeStatus={nodeStatus} historyMeta={historyMeta} historico={historico} sensors={sensors} nodeId={selectedCollectionPoint.sensorId} gatewayId={selectedCollectionPoint.gatewayId} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
         </div>
-        {nodeStatus !== 'offline' && <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} sensors={sensors} nodeId={activeNodeProfile.technicalId} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>}
+        {showCurrent && <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} sensors={sensors} nodeId={activeNodeProfile.technicalId} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>}
       </div>
       <div className={styles.bottomRow}>
-        <div className={styles.bottomCol}><GradientProfile leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} /></div>
+        <div className={styles.bottomCol}><GradientProfile showCurrent={showCurrent} leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} /></div>
         <div className={styles.bottomCol}><StatsTable stats={sensorStats} sensors={sensors} channelStatuses={channelStatuses} scope={statsScope} isLoading={isStatsLoading} hasLoaded={statsHasLoaded} error={statsError} onRetry={retryHistory} /></div>
       </div>
     </>;
