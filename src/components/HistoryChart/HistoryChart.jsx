@@ -228,6 +228,17 @@ export const HistoryChart = ({
     },
   };
 
+  const campaigns = featured.data?.filter(item => item.de && item.ate) ?? [];
+  const selectedCampaign = periodo === 'CENARIO' ? customRange.de : '';
+  const selectCampaign = ({ de, ate }) => {
+    setCustomRange({ de, ate });
+    setPeriodo('CENARIO');
+  };
+  const campaignLabel = ({ de, ate, count }) => {
+    const date = value => value.slice(0, 10).split('-').reverse().join('/');
+    return `${date(de)} a ${date(ate)} · ${count} leituras`;
+  };
+
   const periods = nodeStatus === 'offline' ? ['GERAL'] : ['GERAL', '30M', '1H', '3H', '6H', '12H', '24H'];
   const loadPhase = getLoadPhase(
     { data: historico, isLoading, hasLoaded, error },
@@ -312,17 +323,22 @@ export const HistoryChart = ({
 
       <section className={styles.featured} aria-label="Períodos de coleta contínua">
         <strong>Períodos de coleta contínua</strong>
-        <div className={styles.days}>
-          {featured.data?.filter(item => item.de && item.ate).map(({ de, ate, count }) => (
-            <button key={de} type="button" className={styles.day}
-              aria-pressed={periodo === 'CENARIO' && customRange.de === de}
-              onClick={() => {
-                setCustomRange({ de, ate });
-                setPeriodo('CENARIO');
-              }}>
-              {de.slice(0, 10).split('-').reverse().join('/')} a {ate.slice(0, 10).split('-').reverse().join('/')} · {count} leituras
-            </button>
-          ))}
+        {campaigns.length > 0 && <>
+          <select className={styles.mobileCampaign} aria-label="Selecionar período de coleta"
+            value={selectedCampaign} onChange={event => selectCampaign(campaigns.find(c => c.de === event.target.value))}>
+            <option value="" disabled>Escolha um período</option>
+            {campaigns.map(c => <option key={c.de} value={c.de}>{campaignLabel(c)}</option>)}
+          </select>
+          <div className={styles.days}>
+            {campaigns.map(c => (
+              <button key={c.de} type="button" className={styles.day}
+                aria-pressed={selectedCampaign === c.de} onClick={() => selectCampaign(c)}>
+                {campaignLabel(c)}
+              </button>
+            ))}
+          </div>
+        </>}
+        <div role="status">
           {featured.error && <button type="button" className={styles.exportBtn} onClick={featured.retry}>
             Tentar carregar os períodos novamente
           </button>}

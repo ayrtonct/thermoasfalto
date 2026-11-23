@@ -374,3 +374,22 @@
 .day { padding: .55rem .75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface-inset); color: var(--text-primary); cursor: pointer; }
 .day:hover, .day[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+
+.mobileCampaign { display: none; }
+
+@media (max-width: 640px) {
+  .days { display: none; }
+  .mobileCampaign {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    margin-top: .45rem;
+    padding: .5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-inset);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 1rem;
+  }
+}
