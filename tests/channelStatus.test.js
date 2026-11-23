@@ -117,3 +117,11 @@ test('dashboard shows only DS1–DS4 on node 1 and all six channels on node 2', 
   assert.deepEqual(ids(1), ['ds1', 'ds2', 'ds3', 'ds4']);
   assert.deepEqual(ids(44204), ['ds1', 'ds2', 'ds3', 'ds4', 'ds5', 'ds6']);
 });
+
+test('node 1 dashboard gradient needs valid readings at 2 and 4 cm', async () => {
+  const { getDashboardProfile } = await import('../src/constants/sensors.js');
+  const profile = getDashboardProfile(1);
+  const sample = { temp_ds1: 40, temp_ds2: 85, temp_ds3: 44, temp_ds4: -127, temp_ds5: 60, temp_ds6: 60 };
+  assert.equal(getVerticalGradient(sample, profile), 2);
+  assert.equal(getVerticalGradient({ ...sample, temp_ds1: null }, profile), null);
+});

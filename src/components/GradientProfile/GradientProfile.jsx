@@ -3,7 +3,7 @@ import styles from './GradientProfile.module.css';
 import { GAUGE_MIN, GAUGE_MAX, getDepthGroups } from '../../constants/sensors';
 import { getDepthTemperature } from '../../utils/dataHelpers';
 
-export const GradientProfile = ({ leituraAtual, historico, profile }) => {
+export const GradientProfile = ({ showCurrent, leituraAtual, historico, profile }) => {
   const groups = useMemo(() => getDepthGroups(profile), [profile]);
   const currentValues = groups.map((group) => getDepthTemperature(leituraAtual, group, profile.technicalId));
 
@@ -28,6 +28,7 @@ export const GradientProfile = ({ leituraAtual, historico, profile }) => {
         <h3 className={styles.title}>Perfil térmico</h3>
       </div>
 
+      {showCurrent && <>
       <div className={styles.section}>
         <h4 className={styles.subtitle}>Temperatura atual</h4>
         <div className={styles.bars}>
@@ -50,6 +51,7 @@ export const GradientProfile = ({ leituraAtual, historico, profile }) => {
       </div>
 
       <div className={styles.divider} />
+      </>}
 
       <div className={styles.section}>
         <h4 className={styles.subtitle}>Amplitude no período</h4>
