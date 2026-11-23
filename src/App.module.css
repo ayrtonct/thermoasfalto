@@ -31,6 +31,10 @@
   min-height: clamp(420px, 46vw, 560px);
 }
 
+.middleRow > .chartWrapper:only-child {
+  grid-column: 1 / -1;
+}
+
 .bottomRow {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
