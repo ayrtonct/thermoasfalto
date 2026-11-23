@@ -125,3 +125,9 @@ test('node 1 dashboard gradient needs valid readings at 2 and 4 cm', async () =>
   assert.equal(getVerticalGradient(sample, profile), 2);
   assert.equal(getVerticalGradient({ ...sample, temp_ds1: null }, profile), null);
 });
+
+test('node 1 analytical floor includes exactly 20 and only drops the affected value', () => {
+  assert.equal(safeAvgForNode(1, 19.99, 20, 24, 85), 22);
+  assert.equal(safeAvgForNode(1, 19), null);
+  assert.equal(safeAvgForNode(44204, 19), 19);
+});
