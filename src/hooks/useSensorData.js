@@ -91,6 +91,11 @@ export const useSensorData = () => {
   const pointKey = point?.pointKey;
   const sensorId = point?.sensorId;
   const gatewayId = point?.gatewayId;
+  const loadFeatured = useCallback((signal) => fetchJsonWithTimeout(
+    buildApiUrl(API_BASE, '/api/medicoes/cenarios', { sensor_id: sensorId, gateway_id: gatewayId }),
+    { signal, timeoutMs: HISTORY_TIMEOUT_MS },
+  ), [sensorId, gatewayId]);
+  const featured = useResource(laboratory ? null : pointKey, loadFeatured);
   const revision = current ? `${current.id}|${current.data_hora}` : '';
   const scope = useMemo(() => {
     try { return { params: historyParams(periodo, customRange), error: null }; }
@@ -120,7 +125,7 @@ export const useSensorData = () => {
   const retryHistory = useCallback(() => { retryChart(); retryStats(); }, [retryChart, retryStats]);
   return {
     leituraAtual: current, historico: history.data?.readings || [], recentReadings: current ? [current] : [],
-    sensorStats: stats.data || [], nodeStatuses, availableCollectionPoints: points,
+    featured, sensorStats: stats.data || [], nodeStatuses, availableCollectionPoints: points,
     selectedCollectionPoint: point, activeNodeProfile: profile, setSelectedSensorId: select,
     periodo, setPeriodo, customRange, setCustomRange, isDemo: false,
     isPointsLoading: dashboard.loading, isCurrentLoading: dashboard.loading,

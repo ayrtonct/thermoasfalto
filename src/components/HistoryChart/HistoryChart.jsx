@@ -60,6 +60,8 @@ export const HistoryChart = ({
   sensors,
   nodeId,
   historyMeta,
+  featured,
+  nodeStatus,
   gatewayId,
 }) => {
   const [localRange, setLocalRange] = useState({ de: customRange.de, ate: customRange.ate });
@@ -68,7 +70,7 @@ export const HistoryChart = ({
   const [exportError, setExportError] = useState('');
 
   const getExportFileName = () => {
-    if (periodo === 'LIVRE' && customRange.de && customRange.ate) {
+    if (['LIVRE', 'CENARIO'].includes(periodo) && customRange.de && customRange.ate) {
       const de = customRange.de.replace(/[:T]/g, '-');
       const ate = customRange.ate.replace(/[:T]/g, '-');
       return `historico_${collectionPointId}_${de}_a_${ate}`;
@@ -223,7 +225,7 @@ export const HistoryChart = ({
     },
   };
 
-  const periods = ['GERAL', '30M', '1H', '3H', '6H', '12H', '24H'];
+  const periods = nodeStatus === 'offline' ? ['GERAL'] : ['GERAL', '30M', '1H', '3H', '6H', '12H', '24H'];
   const loadPhase = getLoadPhase(
     { data: historico, isLoading, hasLoaded, error },
     chartData.datasets.length > 0
@@ -243,20 +245,20 @@ export const HistoryChart = ({
             <div className={styles.periodGroup}>
               {periods.map((p) => (
                 <button
-                  key={p}
+                  key={p === 'GERAL' ? 'Todo o histórico' : p}
                   type="button"
                   aria-pressed={periodo === p}
                   className={`${styles.periodBtn} ${periodo === p ? styles.active : ''}`}
                   onClick={() => setPeriodo(p)}
                 >
-                  {p}
+                  {p === 'GERAL' ? 'Todo o histórico' : p}
                 </button>
               ))}
               <button
                 type="button"
                 aria-pressed={periodo === 'LIVRE'}
                 className={`${styles.periodBtn} ${periodo === 'LIVRE' ? styles.active : ''}`}
-                onClick={() => setPeriodo('LIVRE')}
+                onClick={() => { setCustomRange(localRange); setPeriodo('LIVRE'); }}
               >
                 LIVRE
               </button>
@@ -304,6 +306,27 @@ export const HistoryChart = ({
           )}
         </div>
       </div>
+
+      <section className={styles.featured} aria-label="Dias com mais leituras">
+        <strong>Dias com mais leituras</strong>
+        <div className={styles.days}>
+          {featured.data?.map(({ day, count }) => (
+            <button key={day} type="button" className={styles.day}
+              aria-pressed={periodo === 'CENARIO' && customRange.de.startsWith(day)}
+              onClick={() => {
+                setCustomRange({ de: day + 'T00:00:00', ate: day + 'T23:59:59' });
+                setPeriodo('CENARIO');
+              }}>
+              {day.split('-').reverse().join('/')} · {count} leituras
+            </button>
+          ))}
+          {featured.error && <button type="button" className={styles.exportBtn} onClick={featured.retry}>
+            Tentar carregar os dias novamente
+          </button>}
+          {!featured.data && !featured.error && <span>Buscando dias…</span>}
+          {featured.data?.length === 0 && <span>Nenhum dia com duas leituras válidas em horários distintos.</span>}
+        </div>
+      </section>
 
       {exportError && <div role="alert">{exportError}</div>}
       {error && loadPhase === 'data' && (
