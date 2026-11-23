@@ -18,7 +18,7 @@ import { Footer } from './components/Footer/Footer';
 import styles from './App.module.css';
 
 function App() {
-  const [selectedSensorId, setSelectedSensorId] = useState('ds5');
+  const [selectedSensorId, setSelectedSensorId] = useState(null);
   const {
     leituraAtual, historico, recentReadings, sensorStats,
     nodeStatuses, availableCollectionPoints, isPointsLoading,
@@ -48,7 +48,7 @@ function App() {
   const activeSensorId = useMemo(() => {
     const selected = sensors.find((sensor) => sensor.id === selectedSensorId);
     if (selected && channelStatuses[selectedSensorId] === 'online' && leituraAtual?.[`temp_${selectedSensorId}`] !== null) return selectedSensorId;
-    return sensors.find((sensor) => channelStatuses[sensor.id] === 'online' && leituraAtual?.[`temp_${sensor.id}`] !== null)?.id || selectedSensorId;
+    return sensors.find((sensor) => channelStatuses[sensor.id] === 'online' && leituraAtual?.[`temp_${sensor.id}`] !== null)?.id || selected?.id || sensors[0]?.id;
   }, [channelStatuses, leituraAtual, selectedSensorId, sensors]);
   const selectedSensorValue = leituraAtual ? leituraAtual[`temp_${activeSensorId}`] : null;
   const pointName = selectedCollectionPoint ? getCollectionPointName(selectedCollectionPoint.sensorId) : null;

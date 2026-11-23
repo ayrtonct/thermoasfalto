@@ -51,7 +51,7 @@ export const Gauge = ({ value = 0, sensors, nodeId, selectedSensorId, onSelectSe
           <span className={styles.eyebrow}>Leitura atual</span>
           <h3 className={styles.title}>Sensores térmicos</h3>
         </div>
-        <span className={styles.sensorCount}>DS1–DS6</span>
+        <span className={styles.sensorCount}>{sensors.length} canais</span>
       </div>
       <div className={styles.gaugeViz}>
         <svg viewBox="0 0 200 120" className={styles.svg} aria-hidden="true">
