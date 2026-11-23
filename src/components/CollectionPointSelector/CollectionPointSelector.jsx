@@ -13,7 +13,7 @@ export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, le
         <h2 className={styles.title}>Ponto de coleta</h2>
       </div>
       <div className={styles.field}>
-        <label className={styles.label} htmlFor="collection-point">Gateway e sensor</label>
+        <label className={styles.label} htmlFor="collection-point">Nó sensor</label>
         <select
           id="collection-point"
           className={styles.select}
@@ -23,7 +23,7 @@ export const CollectionPointSelector = ({ points, selectedSensorId, onSelect, le
         >
           {points.map((point) => (
             <option key={point.pointKey} value={point.pointKey}>
-              {getCollectionPointName(point.sensorId)} ({getGatewayDisplay(point.gatewayId, point.sensorId)})
+              {getCollectionPointName(point.sensorId)}
             </option>
           ))}
         </select>
