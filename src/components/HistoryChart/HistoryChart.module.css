@@ -368,3 +368,9 @@
     justify-content: center;
   }
 }
+
+.featured { margin-bottom: var(--space-4); color: var(--text-secondary); font-size: .8rem; }
+.days { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem; margin-top: .5rem; }
+.day { padding: .55rem .75rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-inset); color: var(--text-primary); cursor: pointer; }
+.day:hover, .day[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }

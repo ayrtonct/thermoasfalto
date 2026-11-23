@@ -1,6 +1,6 @@
 export const historyParams = (period, custom, now = new Date()) => {
   if (period === 'GERAL') return {};
-  if (period === 'LIVRE') {
+  if (period === 'LIVRE' || period === 'CENARIO') {
     if (!custom.de && !custom.ate) return {};
     if (!custom.de || !custom.ate) throw new Error('Informe início e fim, ou limpe o filtro para ver o histórico geral.');
     const localDate = (value) => new Date(`${value}-03:00`);

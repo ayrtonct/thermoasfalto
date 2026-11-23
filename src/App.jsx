@@ -26,7 +26,7 @@ function App() {
     isCurrentLoading, currentHasLoaded, currentError, retryCurrent,
     isHistoryLoading, historyHasLoaded, historyError, retryHistory,
     hasLoadedPoints, pointsError, selectedCollectionPoint,
-    activeNodeProfile, retryPoints, historyMeta, isStatsLoading, statsHasLoaded, statsError, statsScope,
+    featured, activeNodeProfile, retryPoints, historyMeta, isStatsLoading, statsHasLoaded, statsError, statsScope,
     setSelectedSensorId: setSelectedCollectionPointId,
   } = useSensorData();
 
@@ -71,7 +71,7 @@ function App() {
       <KpiCards leituraAtual={leituraAtual} historico={historico} profile={activeNodeProfile} stats={sensorStats} statsScope={statsScope} isLoading={isCurrentLoading} hasLoaded={currentHasLoaded} error={currentError} onRetry={retryCurrent} />
       <div className={styles.middleRow}>
         <div className={styles.chartWrapper}>
-          <HistoryChart historyMeta={historyMeta} historico={historico} sensors={sensors} nodeId={selectedCollectionPoint.sensorId} gatewayId={selectedCollectionPoint.gatewayId} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
+          <HistoryChart key={activeCollectionPointId} featured={featured} nodeStatus={nodeStatus} historyMeta={historyMeta} historico={historico} sensors={sensors} nodeId={selectedCollectionPoint.sensorId} gatewayId={selectedCollectionPoint.gatewayId} periodo={periodo} setPeriodo={setPeriodo} customRange={customRange} setCustomRange={setCustomRange} isLoading={isHistoryLoading} hasLoaded={historyHasLoaded} error={historyError} onRetry={retryHistory} collectionPointName={pointName} collectionPointId={activeCollectionPointId} />
         </div>
         <div className={styles.gaugeWrapper}><Gauge value={selectedSensorValue} sensors={sensors} nodeId={activeNodeProfile.technicalId} selectedSensorId={activeSensorId} onSelectSensor={setSelectedSensorId} leituraAtual={leituraAtual} channelStatuses={channelStatuses} /></div>
       </div>
